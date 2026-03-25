@@ -6,6 +6,8 @@ import 'package:genkit_google_genai/genkit_google_genai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
+import 'storage_service.dart';
+
 class AiAlarmChoice {
   const AiAlarmChoice({
     required this.hour24,
@@ -102,7 +104,9 @@ class AiService {
       _ai = Genkit(
         plugins: [
           googleAI(
-            apiKey: apiKey ?? const String.fromEnvironment('GEMINI_API_KEY'),
+            apiKey: (apiKey?.trim().isNotEmpty ?? false)
+                ? apiKey!.trim()
+                : _effectiveGeminiApiKey,
           ),
         ],
       );
@@ -117,10 +121,32 @@ class AiService {
   );
   static const _groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
-  bool get _hasApiKey =>
-      const String.fromEnvironment('GEMINI_API_KEY').trim().isNotEmpty;
+  static const _geminiStorageKey = 'ai.gemini_api_key';
+  static const _groqStorageKey = 'ai.groq_api_key';
+  static const _dailyFlowStorageKey = 'ai.genkit.daily_flow_url';
+  static const _weeklyFlowStorageKey = 'ai.genkit.weekly_flow_url';
+  static const _suggestFlowStorageKey = 'ai.genkit.suggest_flow_url';
+
+  static String _runtimeGeminiApiKey = '';
+  static String _runtimeGroqApiKey = '';
+  static String _runtimeDailyFlowUrl = '';
+  static String _runtimeWeeklyFlowUrl = '';
+  static String _runtimeSuggestFlowUrl = '';
+
+  static String get _effectiveGeminiApiKey {
+    if (_runtimeGeminiApiKey.isNotEmpty) {
+      return _runtimeGeminiApiKey;
+    }
+    return const String.fromEnvironment('GEMINI_API_KEY').trim();
+  }
+
+  bool get _hasApiKey => _effectiveGeminiApiKey.isNotEmpty;
 
   String get _groqApiKey {
+    if (_runtimeGroqApiKey.isNotEmpty) {
+      return _runtimeGroqApiKey;
+    }
+
     final env = dotenv.isInitialized ? dotenv.env['GROQ_API_KEY']?.trim() ?? '' : '';
     if (env.isNotEmpty) {
       return env;
@@ -130,14 +156,70 @@ class AiService {
 
   bool get _hasGroqApiKey => _groqApiKey.isNotEmpty;
 
-  // Configure this with your deployed Genkit endpoint.
-  static String suggestAlarmFlowUrl = '';
-  static String dailyAlarmChoicesFlowUrl = const String.fromEnvironment(
+  static const _dailyFlowFromEnv = String.fromEnvironment(
     'GENKIT_GROQ_DAILY_ALARM_FLOW_URL',
   );
-  static String weeklyPlannerFlowUrl = const String.fromEnvironment(
+  static const _weeklyFlowFromEnv = String.fromEnvironment(
     'GENKIT_GROQ_WEEKLY_PLAN_FLOW_URL',
   );
+  static String suggestAlarmFlowUrl = '';
+
+  static String get _dailyFlowUrl {
+    if (_runtimeDailyFlowUrl.isNotEmpty) {
+      return _runtimeDailyFlowUrl;
+    }
+    return _dailyFlowFromEnv;
+  }
+
+  static String get _weeklyFlowUrl {
+    if (_runtimeWeeklyFlowUrl.isNotEmpty) {
+      return _runtimeWeeklyFlowUrl;
+    }
+    return _weeklyFlowFromEnv;
+  }
+
+  static Future<void> loadRuntimeConfig() async {
+    _runtimeGeminiApiKey = (await StorageService.loadString(_geminiStorageKey))?.trim() ?? '';
+    _runtimeGroqApiKey = (await StorageService.loadString(_groqStorageKey))?.trim() ?? '';
+    _runtimeDailyFlowUrl = (await StorageService.loadString(_dailyFlowStorageKey))?.trim() ?? '';
+    _runtimeWeeklyFlowUrl = (await StorageService.loadString(_weeklyFlowStorageKey))?.trim() ?? '';
+    _runtimeSuggestFlowUrl = (await StorageService.loadString(_suggestFlowStorageKey))?.trim() ?? '';
+
+    if (_runtimeSuggestFlowUrl.isNotEmpty) {
+      suggestAlarmFlowUrl = _runtimeSuggestFlowUrl;
+    }
+  }
+
+  static Future<void> saveRuntimeConfig({
+    required String geminiApiKey,
+    required String groqApiKey,
+    required String dailyFlowUrl,
+    required String weeklyFlowUrl,
+    required String suggestFlowUrl,
+  }) async {
+    _runtimeGeminiApiKey = geminiApiKey.trim();
+    _runtimeGroqApiKey = groqApiKey.trim();
+    _runtimeDailyFlowUrl = dailyFlowUrl.trim();
+    _runtimeWeeklyFlowUrl = weeklyFlowUrl.trim();
+    _runtimeSuggestFlowUrl = suggestFlowUrl.trim();
+    suggestAlarmFlowUrl = _runtimeSuggestFlowUrl;
+
+    await StorageService.saveString(_geminiStorageKey, _runtimeGeminiApiKey);
+    await StorageService.saveString(_groqStorageKey, _runtimeGroqApiKey);
+    await StorageService.saveString(_dailyFlowStorageKey, _runtimeDailyFlowUrl);
+    await StorageService.saveString(_weeklyFlowStorageKey, _runtimeWeeklyFlowUrl);
+    await StorageService.saveString(_suggestFlowStorageKey, _runtimeSuggestFlowUrl);
+  }
+
+  static Map<String, String> runtimeConfigSnapshot() {
+    return {
+      'geminiApiKey': _runtimeGeminiApiKey,
+      'groqApiKey': _runtimeGroqApiKey,
+      'dailyFlowUrl': _runtimeDailyFlowUrl,
+      'weeklyFlowUrl': _runtimeWeeklyFlowUrl,
+      'suggestFlowUrl': _runtimeSuggestFlowUrl,
+    };
+  }
 
   Future<String> getAISuggestion(String userInput) async {
     if (suggestAlarmFlowUrl.isNotEmpty) {
@@ -185,7 +267,7 @@ class AiService {
     required int dayOfWeek,
     required String routine,
   }) async {
-    if (dailyAlarmChoicesFlowUrl.isNotEmpty) {
+    if (_dailyFlowUrl.isNotEmpty) {
       try {
         final payload = jsonEncode({
           'model': _groqModel,
@@ -197,7 +279,7 @@ class AiService {
         });
 
         final flow = defineRemoteAction<String, String, String, void>(
-          url: dailyAlarmChoicesFlowUrl,
+          url: _dailyFlowUrl,
           fromResponse: (jsonData) => jsonData.toString(),
           fromStreamChunk: (jsonData) => jsonData.toString(),
         );
@@ -352,7 +434,7 @@ class AiService {
     required int commuteMinutes,
     required int sleepDebtMinutes,
   }) async {
-    if (weeklyPlannerFlowUrl.isNotEmpty) {
+    if (_weeklyFlowUrl.isNotEmpty) {
       try {
         final payload = jsonEncode({
           'model': _groqModel,
@@ -367,7 +449,7 @@ class AiService {
         });
 
         final flow = defineRemoteAction<String, String, String, void>(
-          url: weeklyPlannerFlowUrl,
+          url: _weeklyFlowUrl,
           fromResponse: (jsonData) => jsonData.toString(),
           fromStreamChunk: (jsonData) => jsonData.toString(),
         );

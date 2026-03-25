@@ -2,16 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/alarm_providers.dart';
+import '../services/ai_service.dart';
 import '../services/premium_service.dart';
 import '../services/smart_alarm_service.dart';
 import 'ai_chat_screen.dart';
 import 'alarm_ring_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late Future<bool> _premiumFuture;
+  late Future<AlarmReliabilityStatus> _reliabilityFuture;
+  late Future<DismissChallengeType> _dismissChallengeFuture;
+  late Future<int> _windDownFuture;
+  late Future<AlarmStats> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshAsyncTiles();
+  }
+
+  void _refreshAsyncTiles() {
+    _premiumFuture = PremiumService.isLifetimePremiumUnlocked();
+    _reliabilityFuture = SmartAlarmService.getReliabilityStatus();
+    _dismissChallengeFuture = SmartAlarmService.getDismissChallenge();
+    _windDownFuture = SmartAlarmService.getWindDownMinutes();
+    _statsFuture = SmartAlarmService.getStats();
+  }
+
+  void _refreshAndRebuild() {
+    setState(_refreshAsyncTiles);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final vibrationEnabled = ref.watch(vibrationEnabledProvider);
     final aiSuggestionsEnabled = ref.watch(aiSuggestionsEnabledProvider);
     final themeDark = ref.watch(themeDarkProvider);
@@ -23,7 +53,7 @@ class SettingsScreen extends ConsumerWidget {
           Text('SETTINGS', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 16),
           FutureBuilder<bool>(
-            future: PremiumService.isLifetimePremiumUnlocked(),
+            future: _premiumFuture,
             builder: (context, snapshot) {
               final unlocked = snapshot.data ?? false;
               return _SettingTile(
@@ -106,6 +136,12 @@ class SettingsScreen extends ConsumerWidget {
                 Navigator.of(context).pushNamed(AiChatScreen.routeName),
           ),
           _SettingTile(
+            title: 'AI Keys & SDK',
+            subtitle: 'Gemini, Groq, and Genkit endpoint configuration',
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => _showAiConfigSheet(context),
+          ),
+          _SettingTile(
             title: 'Preview Alarm Ring Screen',
             subtitle: 'Stop / Snooze full-screen preview',
             trailing: const Icon(Icons.chevron_right_rounded),
@@ -113,7 +149,7 @@ class SettingsScreen extends ConsumerWidget {
                 Navigator.of(context).pushNamed(AlarmRingScreen.routeName),
           ),
           FutureBuilder<AlarmReliabilityStatus>(
-            future: SmartAlarmService.getReliabilityStatus(),
+            future: _reliabilityFuture,
             builder: (context, snapshot) {
               final status = snapshot.data;
               final subtitle = status == null
@@ -128,7 +164,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           FutureBuilder<DismissChallengeType>(
-            future: SmartAlarmService.getDismissChallenge(),
+            future: _dismissChallengeFuture,
             builder: (context, snapshot) {
               final challenge = snapshot.data ?? DismissChallengeType.none;
               return _SettingTile(
@@ -140,7 +176,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           FutureBuilder<int>(
-            future: SmartAlarmService.getWindDownMinutes(),
+            future: _windDownFuture,
             builder: (context, snapshot) {
               final minutes = snapshot.data ?? 30;
               return _SettingTile(
@@ -152,7 +188,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           FutureBuilder<AlarmStats>(
-            future: SmartAlarmService.getStats(),
+            future: _statsFuture,
             builder: (context, snapshot) {
               final stats = snapshot.data;
               return _SettingTile(
@@ -167,6 +203,128 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showAiConfigSheet(BuildContext context) {
+    final snapshot = AiService.runtimeConfigSnapshot();
+    final geminiController = TextEditingController(
+      text: snapshot['geminiApiKey'] ?? '',
+    );
+    final groqController = TextEditingController(
+      text: snapshot['groqApiKey'] ?? '',
+    );
+    final dailyController = TextEditingController(
+      text: snapshot['dailyFlowUrl'] ?? '',
+    );
+    final weeklyController = TextEditingController(
+      text: snapshot['weeklyFlowUrl'] ?? '',
+    );
+    final suggestController = TextEditingController(
+      text: snapshot['suggestFlowUrl'] ?? '',
+    );
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI Keys & SDK',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: geminiController,
+                  decoration: const InputDecoration(
+                    labelText: 'Gemini API Key',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: groqController,
+                  decoration: const InputDecoration(
+                    labelText: 'Groq API Key',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: suggestController,
+                  decoration: const InputDecoration(
+                    labelText: 'Genkit Suggest Flow URL',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: dailyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Genkit Daily Flow URL',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: weeklyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Genkit Weekly Flow URL',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await AiService.saveRuntimeConfig(
+                        geminiApiKey: geminiController.text,
+                        groqApiKey: groqController.text,
+                        dailyFlowUrl: dailyController.text,
+                        weeklyFlowUrl: weeklyController.text,
+                        suggestFlowUrl: suggestController.text,
+                      );
+
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext);
+                      }
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'AI configuration saved and applied.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Save AI Configuration'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      geminiController.dispose();
+      groqController.dispose();
+      dailyController.dispose();
+      weeklyController.dispose();
+      suggestController.dispose();
+    });
   }
 
   Future<void> _showPremiumDialog(BuildContext context, bool unlocked) async {
@@ -193,6 +351,7 @@ class SettingsScreen extends ConsumerWidget {
       context,
       PremiumFeature.sleepCoachPro,
     );
+    _refreshAndRebuild();
   }
 
   void _showReliabilityDialog(
@@ -265,6 +424,7 @@ class SettingsScreen extends ConsumerWidget {
                   if (context.mounted) {
                     Navigator.pop(context);
                   }
+                  _refreshAndRebuild();
                 },
               );
             }).toList(),
@@ -289,6 +449,7 @@ class SettingsScreen extends ConsumerWidget {
                 if (context.mounted) {
                   Navigator.pop(context);
                 }
+                _refreshAndRebuild();
               },
             ),
         ],

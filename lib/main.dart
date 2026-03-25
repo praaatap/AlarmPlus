@@ -14,6 +14,7 @@ import 'screens/splash_screen.dart';
 import 'services/alarm_providers.dart';
 import 'services/alarm_service.dart';
 import 'services/alarm_ring_flow.dart';
+import 'services/ai_service.dart';
 import 'services/storage_service.dart';
 
 Future<void> main() async {
@@ -25,6 +26,7 @@ Future<void> main() async {
     debugPrint('No .env file found, proceeding without it.');
   }
   await StorageService.init();
+  await AiService.loadRuntimeConfig();
   await AlarmService.init();
   await AlarmService.restoreEnabledAlarms();
   AlarmRingFlow.bindNativeAlarmEvents();

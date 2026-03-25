@@ -160,6 +160,9 @@ class SmartAlarmService {
   static const _statsKey = 'smart.alarm.stats';
   static const _moodKey = 'smart.mood.latest';
   static const _teenSleepProfileKey = 'smart.sleep.profile';
+  static const Duration _reliabilityCacheTtl = Duration(seconds: 20);
+  static AlarmReliabilityStatus? _reliabilityCache;
+  static DateTime? _reliabilityCacheAt;
 
   static Future<DismissChallengeType> getDismissChallenge() async {
     final prefs = await SharedPreferences.getInstance();
@@ -414,21 +417,54 @@ class SmartAlarmService {
   }
 
   static Future<AlarmReliabilityStatus> getReliabilityStatus() async {
-    final notification = await Permission.notification.status;
-    final exactAlarm = await Permission.scheduleExactAlarm.status;
-
-    var batteryIgnored = true;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      batteryIgnored = await Permission.ignoreBatteryOptimizations.status.then(
-        (value) => value.isGranted,
-      );
+    final now = DateTime.now();
+    final cacheAge = _reliabilityCacheAt == null
+        ? null
+        : now.difference(_reliabilityCacheAt!);
+    if (_reliabilityCache != null &&
+        cacheAge != null &&
+        cacheAge <= _reliabilityCacheTtl) {
+      return _reliabilityCache!;
     }
 
-    return AlarmReliabilityStatus(
-      notificationsGranted: notification.isGranted,
-      exactAlarmGranted: exactAlarm.isGranted,
+    bool notificationsGranted = true;
+    bool exactAlarmGranted = true;
+    var batteryIgnored = true;
+
+    try {
+      final notification = await Permission.notification.status;
+      notificationsGranted = notification.isGranted;
+    } catch (_) {
+      // Keep a safe fallback on platforms where notification status is not exposed.
+    }
+
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    if (isAndroid) {
+      try {
+        final exactAlarm = await Permission.scheduleExactAlarm.status;
+        exactAlarmGranted = exactAlarm.isGranted;
+      } catch (_) {
+        exactAlarmGranted = false;
+      }
+
+      try {
+        batteryIgnored = await Permission.ignoreBatteryOptimizations.status.then(
+          (value) => value.isGranted,
+        );
+      } catch (_) {
+        batteryIgnored = true;
+      }
+    }
+
+    final status = AlarmReliabilityStatus(
+      notificationsGranted: notificationsGranted,
+      exactAlarmGranted: exactAlarmGranted,
       batteryOptimizationIgnored: batteryIgnored,
     );
+    _reliabilityCache = status;
+    _reliabilityCacheAt = now;
+    return status;
   }
 
   static Future<void> recordDismissed() async {

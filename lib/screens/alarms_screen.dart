@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/alarm_providers.dart';
@@ -28,12 +27,6 @@ class AlarmsScreen extends ConsumerWidget {
             color: const Color(0xFF64748B),
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () => _showAddAlarmSheet(context, ref),
-            icon: const Icon(Icons.add, size: 30),
-          ),
-        ],
       ),
       body: alarmsAsync.when(
         data: (alarms) => ListView(
@@ -54,12 +47,13 @@ class AlarmsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddAlarmSheet(context, ref),
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.alarm_add_rounded),
-        label: const Text('Add Alarm'),
+        backgroundColor: const Color(0xFFF4F4F6),
+        foregroundColor: Colors.black,
+        elevation: 2,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 30),
       ),
     );
   }
@@ -411,7 +405,7 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
                     ),
                   ],
                 ),
-              ).animate().fadeIn(duration: 260.ms),
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(

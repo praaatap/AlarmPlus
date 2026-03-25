@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alarm/alarm.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -18,6 +20,10 @@ class AlarmService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   static final Uuid _uuid = const Uuid();
+  static final StreamController<int> _ringIntents =
+      StreamController<int>.broadcast();
+
+  static Stream<int> get ringIntents => _ringIntents.stream;
 
   static bool get _supportsNativeAlarmOps => !kIsWeb;
 
@@ -39,8 +45,26 @@ class AlarmService {
       macOS: iosInit,
     );
 
-    await _notifications.initialize(settings);
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _onNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTap,
+    );
     await requestPermissions();
+  }
+
+  static void _onNotificationResponse(NotificationResponse response) {
+    final payload = response.payload?.trim() ?? '';
+    final alarmId = int.tryParse(payload);
+    if (alarmId == null) {
+      return;
+    }
+    _ringIntents.add(alarmId);
+  }
+
+  @pragma('vm:entry-point')
+  static void _onBackgroundNotificationTap(NotificationResponse response) {
+    _onNotificationResponse(response);
   }
 
   static Future<void> requestPermissions() async {
@@ -52,6 +76,7 @@ class AlarmService {
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await Permission.scheduleExactAlarm.request();
+      await Permission.ignoreBatteryOptimizations.request();
     }
   }
 
@@ -95,30 +120,47 @@ class AlarmService {
       androidFullScreenIntent: true,
     );
 
-    await Alarm.set(alarmSettings: settings);
+    try {
+      await Alarm.set(alarmSettings: settings);
+    } catch (error) {
+      // Some devices deny exact alarms; keep notification fallback alive.
+      debugPrint('Alarm.set failed for ${alarm.id}: $error');
+    }
 
     final location = tz.local;
     final zoned = tz.TZDateTime.from(targetTime, location);
+    final exactPermission = await Permission.scheduleExactAlarm.status;
+    final scheduleMode = (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+        ? (exactPermission.isGranted
+              ? AndroidScheduleMode.exactAllowWhileIdle
+              : AndroidScheduleMode.inexactAllowWhileIdle)
+        : AndroidScheduleMode.exactAllowWhileIdle;
 
     await _notifications.zonedSchedule(
       alarmId,
       alarm.label.isEmpty ? 'FlowMind Alarm' : alarm.label,
       alarm.aiTag,
       zoned,
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'flowmind_alarms',
           'FlowMind Alarms',
           channelDescription: 'Daily and weekly smart alarm reminders',
           importance: Importance.max,
-          priority: Priority.high,
+          priority: Priority.max,
+          category: AndroidNotificationCategory.alarm,
+          fullScreenIntent: true,
+          ongoing: true,
+          autoCancel: false,
+          ticker: 'FlowMind alarm is ringing',
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       matchDateTimeComponents: alarm.repeatDays.isNotEmpty
           ? DateTimeComponents.time
           : null,
+      payload: '$alarmId',
     );
 
     final windDownMinutes = await SmartAlarmService.getWindDownMinutes();
@@ -141,7 +183,7 @@ class AlarmService {
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: scheduleMode,
       );
     }
 
@@ -252,15 +294,27 @@ class AlarmService {
 
   static int _idToInt(String id) {
     final sanitized = id.replaceAll('-', '');
-    final prefix = sanitized.length >= 8
-        ? sanitized.substring(0, 8)
-        : sanitized;
-    return int.tryParse(prefix, radix: 16) ?? id.hashCode.abs();
+
+    // Build a stable positive 31-bit value so Android-side int IDs never overflow.
+    var hash = 0;
+    for (final codeUnit in sanitized.codeUnits) {
+      hash = (hash * 31 + codeUnit) & 0x7fffffff;
+    }
+
+    if (hash == 0) {
+      hash = id.hashCode & 0x7fffffff;
+    }
+
+    // Avoid zero and keep headroom for derived notification IDs.
+    return (hash % 1000000000) + 1;
   }
 
   static int alarmIntId(String id) => _idToInt(id);
 
-  static int _windDownNotificationId(String id) => alarmIntId(id) + 900000;
+  static int _windDownNotificationId(String id) {
+    final base = alarmIntId(id);
+    return ((base + 900000) % 1000000000) + 1;
+  }
 
   static AlarmModel? findByIntId(int alarmId) {
     for (final alarm in getAllAlarms()) {

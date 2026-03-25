@@ -35,28 +35,34 @@ class AlarmCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              RichText(
-                text: TextSpan(
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 66,
-                    fontWeight: FontWeight.w400,
-                    color: color,
-                    height: 0.95,
-                  ),
-                  children: [
-                    TextSpan(text: alarm.timeLabel),
-                    TextSpan(
-                      text: ' ${alarm.periodLabel}',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 40,
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 66,
                         fontWeight: FontWeight.w400,
-                        color: color.withValues(alpha: 0.4),
+                        color: color,
+                        height: 0.95,
                       ),
+                      children: [
+                        TextSpan(text: alarm.timeLabel),
+                        TextSpan(
+                          text: ' ${alarm.periodLabel}',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w400,
+                            color: color.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
               Switch(
                 value: alarm.isEnabled,
                 onChanged: onToggle,

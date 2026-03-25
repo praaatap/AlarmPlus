@@ -13,6 +13,7 @@ final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 class AlarmRingFlow {
   static StreamSubscription<dynamic>? _ringSubscription;
+  static StreamSubscription<int>? _ringIntentSubscription;
   static bool _ringScreenVisible = false;
   static final Set<int> _knownRingingIds = <int>{};
   static final Map<int, Timer> _missedRecoveryTimers = <int, Timer>{};
@@ -33,6 +34,13 @@ class AlarmRingFlow {
       if (ids.isEmpty) {
         _ringScreenVisible = false;
       }
+    });
+
+    _ringIntentSubscription ??= AlarmService.ringIntents.listen((alarmId) {
+      if (alarmId <= 0) {
+        return;
+      }
+      onAlarmRing(alarmId);
     });
   }
 

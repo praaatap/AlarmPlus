@@ -7,11 +7,18 @@ import '../services/alarm_providers.dart';
 import '../services/premium_service.dart';
 import '../services/smart_alarm_service.dart';
 
-class InsightsScreen extends ConsumerWidget {
+class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InsightsScreen> createState() => _InsightsScreenState();
+}
+
+class _InsightsScreenState extends ConsumerState<InsightsScreen> {
+  int _selectedDayIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final alarmsAsync = ref.watch(alarmsListProvider);
 
     return SafeArea(
@@ -48,62 +55,11 @@ class InsightsScreen extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                height: 220,
-                child: BarChart(
-                  BarChartData(
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                            final index = value.toInt();
-                            if (index < 0 || index >= labels.length) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                labels[index],
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(letterSpacing: 1.8),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    barGroups: List.generate(
-                      insightData.bars.length,
-                      (index) => BarChartGroupData(
-                        x: index,
-                        barRods: [
-                          BarChartRodData(
-                            toY: insightData.bars[index],
-                            width: 16,
-                            color: index < 4
-                                ? Colors.black
-                                : const Color(0xFFD4D7DD),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              _buildBarChart(context, insightData),
+              const SizedBox(height: 12),
+              _buildLineChart(context, insightData),
+              const SizedBox(height: 12),
+              _buildSelectedDaySummary(context, insightData),
               const SizedBox(height: 18),
               Text(
                 'FOCUS INTENSITY',
@@ -226,6 +182,191 @@ class InsightsScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  Widget _buildBarChart(BuildContext context, _InsightData insightData) {
+    return SizedBox(
+      height: 220,
+      child: BarChart(
+        BarChartData(
+          minY: 0,
+          maxY: 100,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          barTouchData: BarTouchData(
+            enabled: true,
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => const Color(0xFF0F172A),
+              getTooltipItem: (group, _, rod, __) {
+                const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                return BarTooltipItem(
+                  '${labels[group.x]}: ${rod.toY.toStringAsFixed(0)}%',
+                  const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                );
+              },
+            ),
+            touchCallback: (event, response) {
+              if (!event.isInterestedForInteractions) {
+                return;
+              }
+              final spot = response?.spot;
+              if (spot == null) {
+                return;
+              }
+              setState(() => _selectedDayIndex = spot.touchedBarGroupIndex);
+            },
+          ),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                  final index = value.toInt();
+                  if (index < 0 || index >= labels.length) {
+                    return const SizedBox.shrink();
+                  }
+                  final isSelected = index == _selectedDayIndex;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      labels[index],
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        letterSpacing: 1.8,
+                        color: isSelected
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          barGroups: List.generate(
+            insightData.bars.length,
+            (index) {
+              final isSelected = index == _selectedDayIndex;
+              return BarChartGroupData(
+                x: index,
+                barRods: [
+                  BarChartRodData(
+                    toY: insightData.bars[index],
+                    width: isSelected ? 20 : 16,
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineChart(BuildContext context, _InsightData insightData) {
+    return SizedBox(
+      height: 150,
+      child: LineChart(
+        LineChartData(
+          minY: 0,
+          maxY: 100,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(show: false),
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => const Color(0xFF0F172A),
+              getTooltipItems: (spots) => spots
+                  .map(
+                    (spot) => LineTooltipItem(
+                      '${spot.y.toStringAsFixed(0)}%',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            touchCallback: (event, response) {
+              if (!event.isInterestedForInteractions) {
+                return;
+              }
+              final spots = response?.lineBarSpots;
+              final spot = (spots != null && spots.isNotEmpty) ? spots.first : null;
+              if (spot == null) {
+                return;
+              }
+              setState(() => _selectedDayIndex = spot.x.toInt());
+            },
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              isCurved: true,
+              color: const Color(0xFF0F172A),
+              barWidth: 2.2,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, _, __, ___) {
+                  final isSelected = spot.x.toInt() == _selectedDayIndex;
+                  return FlDotCirclePainter(
+                    radius: isSelected ? 4.5 : 3.0,
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF94A3B8),
+                    strokeWidth: 0,
+                  );
+                },
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                color: const Color(0x140F172A),
+              ),
+              spots: List.generate(
+                insightData.bars.length,
+                (index) => FlSpot(index.toDouble(), insightData.bars[index]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedDaySummary(BuildContext context, _InsightData insightData) {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final dayLabel = labels[_selectedDayIndex];
+    final value = insightData.bars[_selectedDayIndex].toStringAsFixed(0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        '$dayLabel focus score: $value%',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF0F172A),
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
