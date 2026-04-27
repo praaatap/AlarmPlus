@@ -265,14 +265,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  dart_openai:
-    dependency: "direct main"
-    description:
-      name: dart_openai
-      sha256: "853bb57fed6a71c3ba0324af5cb40c16d196cf3aa55b91d244964ae4a241ccf1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.1.0"
   dart_style:
     dependency: transitive
     description:
@@ -289,14 +281,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
-  decimal:
-    dependency: transitive
-    description:
-      name: decimal
-      sha256: fc706a5618b81e5b367b01dd62621def37abc096f2b46a9bd9068b64c1fa36d0
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.4"
   device_info_plus:
     dependency: transitive
     description:
@@ -313,14 +297,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.3"
-  email_validator:
-    dependency: transitive
-    description:
-      name: email_validator
-      sha256: b19aa5d92fdd76fbc65112060c94d45ba855105a28bb6e462de7ff03b12fa1fb
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
   equatable:
     dependency: transitive
     description:
@@ -337,22 +313,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.3"
-  fetch_api:
-    dependency: transitive
-    description:
-      name: fetch_api
-      sha256: "24cbd5616f3d4008c335c197bb90bfa0eb43b9e55c6de5c60d1f805092636034"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.1"
-  fetch_client:
-    dependency: transitive
-    description:
-      name: fetch_client
-      sha256: "3766964cc49ad1d007c261d7acecea61a73581e31fdbd948b446025851766bc8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   ffi:
     dependency: transitive
     description:
@@ -398,14 +358,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.2"
-  flutter_dotenv:
-    dependency: "direct main"
-    description:
-      name: flutter_dotenv
-      sha256: b7c7be5cd9f6ef7a78429cabd2774d3c4af50e79cb2b7593e3d5d763ef95c61b
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.2.1"
   flutter_fgbg:
     dependency: transitive
     description:
@@ -496,22 +448,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  genkit:
-    dependency: "direct main"
-    description:
-      name: genkit
-      sha256: "4b24b786031940cdc77c6f2668dc802b90cd9f67f45b8566578c4c98918a5d79"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.11.1"
-  genkit_google_genai:
-    dependency: "direct main"
-    description:
-      name: genkit_google_genai
-      sha256: "9020f62b43927e08ea8985199633d37e6384300cb21aaf573ce630c1c674e925"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.2"
   glob:
     dependency: transitive
     description:
@@ -569,7 +505,7 @@ packages:
     source: hosted
     version: "0.15.6"
   http:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -624,14 +560,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.11.0"
-  json_schema_builder:
-    dependency: transitive
-    description:
-      name: json_schema_builder
-      sha256: "65035d48d028401ad0ffc8c2f173209c7b1441e465a942a0f909070fae33170c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.3"
   leak_tracker:
     dependency: transitive
     description:
@@ -736,14 +664,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.3.0"
-  opentelemetry:
-    dependency: transitive
-    description:
-      name: opentelemetry
-      sha256: "92d63a2e0731d34a7548add82420b8f3819ccda569f9bdfdcc4b25e00fe88da4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.18.11"
   package_config:
     dependency: transitive
     description:
@@ -912,14 +832,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "75ec242d22e950bdcc79ee38dd520ce4ee0bc491d7fadc4ea47694604d22bf06"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
   provider:
     dependency: "direct main"
     description:
@@ -944,22 +856,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
-  rational:
-    dependency: transitive
-    description:
-      name: rational
-      sha256: cb808fb6f1a839e6fc5f7d8cb3b0a10e1db48b3be102de73938c627f0b636336
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.3"
   riverpod:
     dependency: "direct main"
     description:
@@ -976,14 +872,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  schemantic:
-    dependency: transitive
-    description:
-      name: schemantic
-      sha256: "4de8f6302d3fdb5dc613134e7fc40bbe71416e1f2bed220ac0222f53e97e0406"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1061,14 +949,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  source_gen:
-    dependency: transitive
-    description:
-      name: source_gen
-      sha256: adc962c96fffb2de1728ef396a995aaedcafbe635abdca13d2a987ce17e57751
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.1"
   source_span:
     dependency: transitive
     description:

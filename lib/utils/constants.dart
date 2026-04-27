@@ -33,7 +33,7 @@ class AppAnimations {
 // Alarm-specific
 class AlarmDefaults {
   static const String soundDefault = 'default';
-  static const String aiTagDefault = 'Optimal sleep cycle';
+  static const String tagDefault = 'Steady wake';
   static const String labelDefault = 'Work Morning';
   static const int defaultHour = 7;
   static const int defaultMinute = 30;

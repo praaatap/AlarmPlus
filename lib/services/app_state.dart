@@ -8,7 +8,6 @@ class AppState extends ChangeNotifier {
   final Map<String, AlarmModel> _alarmsMap = {};
 
   bool _vibrationEnabled = true;
-  bool _aiSuggestionsEnabled = true;
   bool _themeDark = false;
 
   int get currentTabIndex => _currentTabIndex;
@@ -25,7 +24,6 @@ class AppState extends ChangeNotifier {
   }
 
   bool get vibrationEnabled => _vibrationEnabled;
-  bool get aiSuggestionsEnabled => _aiSuggestionsEnabled;
   bool get themeDark => _themeDark;
 
   /// Load alarms from storage (initial load only)
@@ -55,14 +53,14 @@ class AppState extends ChangeNotifier {
         label: 'Work Morning',
         repeatDays: const [1, 2, 3, 4, 5],
         isEnabled: true,
-        aiTag: 'Optimal sleep cycle',
+        tag: 'Steady wake',
       ),
       AlarmService.createAlarm(
         time: const TimeOfDay(hour: 7, minute: 15),
         label: 'Gentle Wake',
         repeatDays: const [1, 2, 3, 4, 5, 6, 7],
         isEnabled: true,
-        aiTag: 'Gentle wake AI',
+        tag: 'Gentle wake',
       ),
     ];
 
@@ -101,7 +99,7 @@ class AppState extends ChangeNotifier {
     required String label,
     required List<int> repeatDays,
     required bool isEnabled,
-    required String aiTag,
+    String tag = '',
     String sound = 'default',
   }) async {
     try {
@@ -110,7 +108,7 @@ class AppState extends ChangeNotifier {
         label: label,
         repeatDays: repeatDays,
         isEnabled: isEnabled,
-        aiTag: aiTag,
+        tag: tag,
         sound: sound,
       );
       await saveAlarm(alarm);
@@ -197,26 +195,12 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<String> getAISuggestion(String routine) async {
-    try {
-      return await AlarmService.getAISuggestion(routine);
-    } catch (e) {
-      debugPrint('Error getting AI suggestion: $e');
-      rethrow;
-    }
-  }
-
   List<AlarmModel> getAllAlarms() {
     return AlarmService.getAllAlarms();
   }
 
   void setVibration(bool enabled) {
     _vibrationEnabled = enabled;
-    notifyListeners();
-  }
-
-  void setAiSuggestions(bool enabled) {
-    _aiSuggestionsEnabled = enabled;
     notifyListeners();
   }
 

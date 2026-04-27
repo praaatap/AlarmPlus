@@ -6,6 +6,8 @@ import '../models/alarm_model.dart';
 import '../services/alarm_providers.dart';
 import '../services/premium_service.dart';
 import '../services/smart_alarm_service.dart';
+import '../widgets/streak_calendar.dart';
+import '../widgets/wake_report_widget.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -25,16 +27,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
       child: alarmsAsync.when(
         data: (alarms) {
           final insightData = _buildInsightData(alarms);
-          final alarmsContext = _buildAlarmsContext(
-            alarms,
-            insightData.focusText,
-          );
-          final aiInsightAsync = ref.watch(
-            aiSuggestionProvider(
-              'Rewrite this as one short productivity insight: ${insightData.focusText}. '
-              'Context: $alarmsContext',
-            ),
-          );
           final sleepSnapshotFuture = SmartAlarmService.buildSleepCoachSnapshot(
             alarms,
           );
@@ -55,6 +47,48 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 20),
+              // Wake Quality Report
+              FutureBuilder<List<WakeScore>>(
+                future: SmartAlarmService.getWakeScoreHistory(),
+                builder: (ctx, snap) {
+                  if (!snap.hasData) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('WAKE REPORT',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(letterSpacing: 3, color: const Color(0xFF64748B))),
+                      const SizedBox(height: 10),
+                      WakeReportCard(history: snap.data!),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+              // Streak Calendar
+              FutureBuilder<Map<String, bool>>(
+                future: SmartAlarmService.getCalendarHistory(),
+                builder: (ctx, snap) {
+                  if (!snap.hasData) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('STREAK HISTORY',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(letterSpacing: 3, color: const Color(0xFF64748B))),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: StreakCalendarWidget(history: snap.data!),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
               _buildBarChart(context, insightData),
               const SizedBox(height: 12),
               _buildLineChart(context, insightData),
@@ -94,10 +128,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        aiInsightAsync.maybeWhen(
-                          data: (value) => value,
-                          orElse: () => insightData.focusText,
-                        ),
+                        insightData.focusText,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -437,14 +468,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     return 'Most alarms cluster on ${dayLabels[bestDayIndex]} around $hh:$mm $period.';
   }
 
-  String _buildAlarmsContext(List<AlarmModel> alarms, String fallbackInsight) {
-    if (alarms.isEmpty) {
-      return 'No alarms configured.';
-    }
-
-    final enabledCount = alarms.where((alarm) => alarm.isEnabled).length;
-    return 'Total alarms: ${alarms.length}, enabled: $enabledCount, baseline insight: $fallbackInsight';
-  }
 }
 
 class _HeatMap extends StatelessWidget {

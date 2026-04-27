@@ -2,39 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-import 'screens/ai_chat_screen.dart';
 import 'screens/alarm_ring_screen.dart';
 import 'screens/focus_timer_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
+import 'screens/morning_missions_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/wake_routine_screen.dart';
 import 'services/alarm_providers.dart';
 import 'services/alarm_service.dart';
 import 'services/alarm_ring_flow.dart';
-import 'services/ai_service.dart';
 import 'services/storage_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // Optional for local/device configuration.
-    debugPrint('No .env file found, proceeding without it.');
-  }
   await StorageService.init();
-  await AiService.loadRuntimeConfig();
   await AlarmService.init();
   await AlarmService.restoreEnabledAlarms();
   AlarmRingFlow.bindNativeAlarmEvents();
-  runApp(const FlowMindApp());
+  runApp(const AlarmPlusApp());
 }
 
-class FlowMindApp extends StatelessWidget {
-  const FlowMindApp({super.key});
+class AlarmPlusApp extends StatelessWidget {
+  const AlarmPlusApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +35,7 @@ class FlowMindApp extends StatelessWidget {
     return ProviderScope(
       child: MaterialApp(
         navigatorKey: appNavigatorKey,
-        title: 'FlowMind',
+        title: 'Alarm+',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           scaffoldBackgroundColor: Colors.white,
@@ -94,9 +86,10 @@ class FlowMindApp extends StatelessWidget {
           '/': (_) => const SplashScreen(),
           '/app': (_) => const MainScaffold(),
           FocusTimerScreen.routeName: (_) => const FocusTimerScreen(),
-          AiChatScreen.routeName: (_) => const AiChatScreen(),
           AlarmRingScreen.routeName: (_) => const AlarmRingScreen(),
+          MorningMissionsScreen.routeName: (_) => const MorningMissionsScreen(),
           SplashScreen.routeName: (_) => const SplashScreen(),
+          WakeRoutineScreen.routeName: (_) => const WakeRoutineScreen(),
         },
       ),
     );

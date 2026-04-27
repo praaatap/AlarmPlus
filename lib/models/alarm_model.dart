@@ -8,8 +8,9 @@ class AlarmModel {
     required this.label,
     required this.repeatDays,
     required this.isEnabled,
-    required this.aiTag,
+    required this.tag,
     required this.sound,
+    this.personality = 'gentle',
   });
 
   final String id;
@@ -17,8 +18,9 @@ class AlarmModel {
   final String label;
   final List<int> repeatDays;
   final bool isEnabled;
-  final String aiTag;
+  final String tag;
   final String sound;
+  final String personality;
 
   String get timeLabel {
     final now = DateTime.now();
@@ -81,8 +83,9 @@ class AlarmModel {
       'label': label,
       'repeatDays': repeatDays,
       'isEnabled': isEnabled,
-      'aiTag': aiTag,
+      'tag': tag,
       'sound': sound,
+      'personality': personality,
     };
   }
 
@@ -112,8 +115,9 @@ class AlarmModel {
       label: (map['label'] as String?) ?? '',
       repeatDays: rawDays,
       isEnabled: (map['isEnabled'] as bool?) ?? true,
-      aiTag: (map['aiTag'] as String?) ?? 'Optimal sleep cycle',
+      tag: (map['tag'] as String?) ?? (map['aiTag'] as String?) ?? 'Steady wake',
       sound: (map['sound'] as String?) ?? 'default',
+      personality: (map['personality'] as String?) ?? 'gentle',
     );
   }
 
@@ -123,8 +127,9 @@ class AlarmModel {
     String? label,
     List<int>? repeatDays,
     bool? isEnabled,
-    String? aiTag,
+    String? tag,
     String? sound,
+    String? personality,
   }) {
     return AlarmModel(
       id: id ?? this.id,
@@ -132,8 +137,9 @@ class AlarmModel {
       label: label ?? this.label,
       repeatDays: repeatDays ?? this.repeatDays,
       isEnabled: isEnabled ?? this.isEnabled,
-      aiTag: aiTag ?? this.aiTag,
+      tag: tag ?? this.tag,
       sound: sound ?? this.sound,
+      personality: personality ?? this.personality,
     );
   }
 }

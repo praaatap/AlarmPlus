@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/alarm_providers.dart';
-import '../services/ai_service.dart';
 import '../services/premium_service.dart';
 import '../services/smart_alarm_service.dart';
-import 'ai_chat_screen.dart';
 import 'alarm_ring_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -43,7 +41,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final vibrationEnabled = ref.watch(vibrationEnabledProvider);
-    final aiSuggestionsEnabled = ref.watch(aiSuggestionsEnabledProvider);
     final themeDark = ref.watch(themeDarkProvider);
 
     return SafeArea(
@@ -59,7 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               return _SettingTile(
                 title: 'Lifetime Premium',
                 subtitle: unlocked
-                    ? 'Unlocked · AI planner, sleep coach pro, adaptive alarms'
+                    ? 'Unlocked · Sleep coach pro, adaptive alarms, wake challenges'
                     : '₹299 one-time · unlock pro planning and teen sleep features',
                 trailing: Icon(
                   unlocked
@@ -104,18 +101,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           _SettingTile(
-            title: 'AI Suggestions',
-            subtitle: 'Smart label and schedule hints',
-            trailing: Switch(
-              value: aiSuggestionsEnabled,
-              onChanged: (value) =>
-                  ref.read(aiSuggestionsEnabledProvider.notifier).state = value,
-              activeTrackColor: const Color(0xFF22C55E),
-              activeThumbColor: Colors.white,
-              inactiveTrackColor: const Color(0xFFE2E8F0),
-            ),
-          ),
-          _SettingTile(
             title: 'Theme Toggle',
             subtitle: 'Prepared for future dark mode',
             trailing: Switch(
@@ -128,19 +113,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          _SettingTile(
-            title: 'Open AI Assistant',
-            subtitle: 'Plan your day with FlowMind',
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () =>
-                Navigator.of(context).pushNamed(AiChatScreen.routeName),
-          ),
-          _SettingTile(
-            title: 'AI Keys & SDK',
-            subtitle: 'Gemini, Groq, and Genkit endpoint configuration',
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => _showAiConfigSheet(context),
-          ),
           _SettingTile(
             title: 'Preview Alarm Ring Screen',
             subtitle: 'Stop / Snooze full-screen preview',
@@ -203,128 +175,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
-  }
-
-  void _showAiConfigSheet(BuildContext context) {
-    final snapshot = AiService.runtimeConfigSnapshot();
-    final geminiController = TextEditingController(
-      text: snapshot['geminiApiKey'] ?? '',
-    );
-    final groqController = TextEditingController(
-      text: snapshot['groqApiKey'] ?? '',
-    );
-    final dailyController = TextEditingController(
-      text: snapshot['dailyFlowUrl'] ?? '',
-    );
-    final weeklyController = TextEditingController(
-      text: snapshot['weeklyFlowUrl'] ?? '',
-    );
-    final suggestController = TextEditingController(
-      text: snapshot['suggestFlowUrl'] ?? '',
-    );
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 12,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'AI Keys & SDK',
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: geminiController,
-                  decoration: const InputDecoration(
-                    labelText: 'Gemini API Key',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: groqController,
-                  decoration: const InputDecoration(
-                    labelText: 'Groq API Key',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: suggestController,
-                  decoration: const InputDecoration(
-                    labelText: 'Genkit Suggest Flow URL',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: dailyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Genkit Daily Flow URL',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: weeklyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Genkit Weekly Flow URL',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await AiService.saveRuntimeConfig(
-                        geminiApiKey: geminiController.text,
-                        groqApiKey: groqController.text,
-                        dailyFlowUrl: dailyController.text,
-                        weeklyFlowUrl: weeklyController.text,
-                        suggestFlowUrl: suggestController.text,
-                      );
-
-                      if (sheetContext.mounted) {
-                        Navigator.pop(sheetContext);
-                      }
-
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'AI configuration saved and applied.',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text('Save AI Configuration'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).whenComplete(() {
-      geminiController.dispose();
-      groqController.dispose();
-      dailyController.dispose();
-      weeklyController.dispose();
-      suggestController.dispose();
-    });
   }
 
   Future<void> _showPremiumDialog(BuildContext context, bool unlocked) async {

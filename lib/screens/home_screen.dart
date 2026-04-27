@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/alarm_model.dart';
 import '../services/alarm_providers.dart';
 import '../services/alarm_service.dart';
 import '../services/premium_service.dart';
 import '../services/smart_alarm_service.dart';
-import '../widgets/ai_chip.dart';
 import '../widgets/alarm_card.dart';
-import 'ai_chat_screen.dart';
 import 'alarms_screen.dart';
 import 'focus_timer_screen.dart';
+import 'morning_missions_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -27,7 +27,7 @@ class HomeScreen extends ConsumerWidget {
             Row(
               children: [
                 Text(
-                  'FlowMind',
+                  'Alarm+',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 30,
@@ -47,6 +47,78 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 18),
+            // Streak / XP hero widget
+            FutureBuilder<(AlarmStats, int)>(
+              future: Future.wait([
+                SmartAlarmService.getStats(),
+                SmartAlarmService.getXp(),
+              ]).then((r) => (r[0] as AlarmStats, r[1] as int)),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox(height: 80);
+                final (stats, xp) = snapshot.data!;
+                return _StreakHeroWidget(
+                  stats: stats,
+                  xp: xp,
+                  onTap: () =>
+                      ref.read(currentTabIndexProvider.notifier).state = 1,
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            // Morning Missions card
+            FutureBuilder<List<dynamic>>(
+              future: SmartAlarmService.getTodayMissions(),
+              builder: (context, snap) {
+                if (!snap.hasData) return const SizedBox.shrink();
+                final missions = snap.data!;
+                final completed = missions.where((m) => (m as dynamic).isCompleted == true).length;
+                final total = missions.length;
+                if (total == 0) return const SizedBox.shrink();
+                return GestureDetector(
+                  onTap: () => Navigator.of(context).pushNamed(MorningMissionsScreen.routeName),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: completed == total ? const Color(0xFFF0FDF4) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: completed == total ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🌅', style: TextStyle(fontSize: 24)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Morning Missions',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                              Text('$completed/$total completed · +${completed * 15} XP earned',
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: List.generate(total, (i) => Container(
+                            width: 10, height: 10,
+                            margin: const EdgeInsets.only(left: 4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: i < completed ? const Color(0xFF22C55E) : const Color(0xFFE2E8F0),
+                            ),
+                          )),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 20),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 4),
             Text(
               'YOUR TODAY',
               style: Theme.of(
@@ -68,24 +140,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              child: const Column(
-                children: [
-                  _TimelineTile(
-                    time: '09:00',
-                    title: 'Deep Work Block',
-                    subtitle: '25 min focus sprint',
-                  ),
-                  _TimelineTile(
-                    time: '10:30',
-                    title: 'Review + Notes',
-                    subtitle: 'AI-assisted summary session',
-                  ),
-                  _TimelineTile(
-                    time: '11:15',
-                    title: 'Suggested break',
-                    subtitle: 'Based on your current rhythm',
-                  ),
-                ],
+              child: Column(
+                children: _buildTodayTiles(context, alarms),
               ),
             ),
             const SizedBox(height: 26),
@@ -178,12 +234,24 @@ class HomeScreen extends ConsumerWidget {
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: 8),
-                                AiChip(
-                                  label: unlocked
-                                      ? (coach == null
-                                            ? 'Sleep coach loading'
-                                            : 'Consistency ${coach.consistencyScore}%')
-                                      : 'Premium feature',
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    unlocked
+                                        ? (coach == null
+                                              ? 'Sleep coach loading'
+                                              : 'Consistency ${coach.consistencyScore}%')
+                                        : 'Premium feature',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF475569),
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -275,10 +343,10 @@ class HomeScreen extends ConsumerWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      Navigator.of(context).pushNamed(AiChatScreen.routeName);
+                      Navigator.of(context).pushNamed('/wake-routine');
                     },
-                    icon: const Icon(Icons.chat_bubble_outline_rounded),
-                    label: const Text('Open AI Assistant'),
+                    icon: const Icon(Icons.wb_sunny_outlined),
+                    label: const Text('Wake Routine'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -299,12 +367,66 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
-          ].animate(interval: 70.ms).fadeIn(duration: 240.ms).move(begin: const Offset(0, 8), end: Offset.zero),
+          ].animate(interval: 70.ms).fadeIn(duration: 240.ms).move(
+            begin: const Offset(0, 8),
+            end: Offset.zero,
+          ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
+  }
+
+  List<Widget> _buildTodayTiles(BuildContext context, List<AlarmModel> alarms) {
+    final today = DateTime.now().weekday; // 1=Mon … 7=Sun
+    final now = DateTime.now();
+
+    final todayAlarms = alarms.where((alarm) {
+      if (!alarm.isEnabled) return false;
+      if (alarm.repeatDays.isEmpty) {
+        final next = alarm.nextDateTimeFrom(now);
+        return next.year == now.year &&
+            next.month == now.month &&
+            next.day == now.day;
+      }
+      return alarm.repeatDays.contains(today);
+    }).toList()
+      ..sort(
+        (a, b) => (a.time.hour * 60 + a.time.minute)
+            .compareTo(b.time.hour * 60 + b.time.minute),
+      );
+
+    if (todayAlarms.isEmpty) {
+      return [
+        const _TimelineTile(
+          time: '--:--',
+          title: 'Rest day',
+          subtitle: 'No alarms scheduled for today',
+        ),
+      ];
+    }
+
+    final tiles = <Widget>[];
+    for (final alarm in todayAlarms.take(2)) {
+      tiles.add(
+        _TimelineTile(
+          time: alarm.timeLabel,
+          title: alarm.label.isEmpty ? 'Wake Alarm' : alarm.label,
+          subtitle: '${alarm.periodLabel} · ${alarm.repeatLabel}',
+        ),
+      );
+    }
+
+    tiles.add(
+      const _TimelineTile(
+        time: '+25m',
+        title: 'Focus Sprint',
+        subtitle: 'Suggested after wake — tap Start Focus',
+      ),
+    );
+
+    return tiles;
   }
 
   Future<void> _showMoodCheckIn(BuildContext context) async {
@@ -349,27 +471,48 @@ class HomeScreen extends ConsumerWidget {
       sleepQuality: sleep.round(),
     );
 
+    // Check for newly unlocked badges after mood check-in
+    final stats = await SmartAlarmService.getStats();
+    final newBadges = await SmartAlarmService.checkAndUnlockBadges(stats);
+
     var tuned = false;
-    if (await PremiumService.canUse(PremiumFeature.adaptiveAlarmTuning)) {
-      tuned = await AlarmService.autoAdjustNextAlarmFromMood(
-        energy: energy.round(),
-        sleepQuality: sleep.round(),
+    try {
+      final canTune = await PremiumService.canUse(
+        PremiumFeature.adaptiveAlarmTuning,
       );
-    }
+      if (canTune) {
+        tuned = await AlarmService.autoAdjustNextAlarmFromMood(
+          energy: energy.round(),
+          sleepQuality: sleep.round(),
+        );
+      }
+    } catch (_) {}
 
     if (!context.mounted) {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          tuned
-              ? 'Check-in saved. Next alarm tuned.'
-              : 'Check-in saved. Unlock premium for adaptive alarm tuning.',
+    if (newBadges.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Badge unlocked: ${SmartAlarmService.badgeDisplayName(newBadges.first) ?? newBadges.first}!',
+          ),
+          backgroundColor: const Color(0xFF0F172A),
+          duration: const Duration(seconds: 3),
         ),
-      ),
-    );
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tuned
+                ? 'Check-in saved. Next alarm tuned. +20 XP'
+                : 'Check-in saved. +20 XP',
+          ),
+        ),
+      );
+    }
   }
 
   Widget _sliderRow(
@@ -389,6 +532,154 @@ class HomeScreen extends ConsumerWidget {
           onChanged: onChanged,
         ),
       ],
+    );
+  }
+}
+
+class _StreakHeroWidget extends StatelessWidget {
+  const _StreakHeroWidget({
+    required this.stats,
+    required this.xp,
+    required this.onTap,
+  });
+
+  final AlarmStats stats;
+  final int xp;
+  final VoidCallback onTap;
+
+  String _fireEmoji(int streak) {
+    if (streak >= 30) return '🔥🔥🔥';
+    if (streak >= 7) return '🔥🔥';
+    if (streak >= 3) return '🔥';
+    return '⭐';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final streak = stats.currentStreak;
+    final label = SmartAlarmService.levelLabel(xp);
+    final progress = SmartAlarmService.xpLevelProgress(xp);
+    final toNext = SmartAlarmService.xpToNextLevel(xp);
+    final isHot = streak >= 3;
+    final nextMilestone = SmartAlarmService.getStreakMilestoneNext(streak);
+    final milestoneProgress = streak / nextMilestone;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isHot
+                ? [const Color(0xFFFFF7ED), const Color(0xFFFEF3C7)]
+                : [const Color(0xFFF8FAFC), const Color(0xFFF1F5F9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isHot ? const Color(0xFFFED7AA) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(_fireEmoji(streak), style: const TextStyle(fontSize: 36)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '$streak',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: isHot ? const Color(0xFFEA580C) : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'day streak',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isHot ? const Color(0xFFEA580C) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(label,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: const Color(0xFFE2E8F0),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isHot ? const Color(0xFFF97316) : const Color(0xFF22C55E)),
+                          minHeight: 6,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text('$xp XP · $toNext to next level',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$streak / $nextMilestone days to milestone',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: milestoneProgress.clamp(0.0, 1.0),
+                          backgroundColor: const Color(0xFFE2E8F0),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF59E0B)),
+                          minHeight: 4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FutureBuilder<int>(
+                  future: SmartAlarmService.getStreakFreezesOwned(),
+                  builder: (ctx, snap) {
+                    final freezes = snap.data ?? 0;
+                    if (freezes == 0) return const SizedBox.shrink();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Text('🧊 ×$freezes',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8))),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

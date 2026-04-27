@@ -12,7 +12,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:uuid/uuid.dart';
 
 import '../models/alarm_model.dart';
-import 'ai_service.dart';
 import 'smart_alarm_service.dart';
 import 'storage_service.dart';
 
@@ -110,8 +109,8 @@ class AlarmService {
       assetAudioPath: selectedSound == 'default' ? null : selectedSound,
       volumeSettings: VolumeSettings.fade(fadeDuration: Duration(seconds: 8)),
       notificationSettings: NotificationSettings(
-        title: alarm.label.isEmpty ? 'FlowMind Alarm' : alarm.label,
-        body: alarm.aiTag,
+        title: alarm.label.isEmpty ? 'Alarm+' : alarm.label,
+        body: alarm.tag,
       ),
       loopAudio: true,
       vibrate: true,
@@ -122,6 +121,7 @@ class AlarmService {
 
     try {
       await Alarm.set(alarmSettings: settings);
+      await SmartAlarmService.checkNightOwlBadge(alarm.time);
     } catch (error) {
       // Some devices deny exact alarms; keep notification fallback alive.
       debugPrint('Alarm.set failed for ${alarm.id}: $error');
@@ -138,13 +138,13 @@ class AlarmService {
 
     await _notifications.zonedSchedule(
       alarmId,
-      alarm.label.isEmpty ? 'FlowMind Alarm' : alarm.label,
-      alarm.aiTag,
+      alarm.label.isEmpty ? 'Alarm+' : alarm.label,
+      alarm.tag,
       zoned,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          'flowmind_alarms',
-          'FlowMind Alarms',
+          'alarm_plus_alarms',
+          'Alarm+ Alarms',
           channelDescription: 'Daily and weekly smart alarm reminders',
           importance: Importance.max,
           priority: Priority.max,
@@ -152,7 +152,7 @@ class AlarmService {
           fullScreenIntent: true,
           ongoing: true,
           autoCancel: false,
-          ticker: 'FlowMind alarm is ringing',
+          ticker: 'Alarm+ is ringing',
         ),
         iOS: DarwinNotificationDetails(),
       ),
@@ -175,8 +175,8 @@ class AlarmService {
         tz.TZDateTime.from(windDownTime, location),
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'flowmind_winddown',
-            'FlowMind Wind-down',
+            'alarm_plus_winddown',
+            'Alarm+ Wind-down',
             channelDescription: 'Pre-alarm sleep prep reminders',
             importance: Importance.high,
             priority: Priority.high,
@@ -235,36 +235,6 @@ class AlarmService {
     }
   }
 
-  static Future<String> getAISuggestion(String routine) async {
-    return AiService().getAISuggestion(routine);
-  }
-
-  static Future<List<AiAlarmChoice>> getDailyAlarmChoices({
-    required int dayOfWeek,
-    required String routine,
-  }) async {
-    return AiService().getDailyAlarmChoices(
-      dayOfWeek: dayOfWeek,
-      routine: routine,
-    );
-  }
-
-  static Future<List<WeeklyAlarmPlanItem>> generateWeeklyAlarmPlan({
-    required String routine,
-    required String meetings,
-    required bool gymDays,
-    required int commuteMinutes,
-    required int sleepDebtMinutes,
-  }) async {
-    return AiService().generateWeeklyAlarmPlan(
-      routine: routine,
-      meetings: meetings,
-      gymDays: gymDays,
-      commuteMinutes: commuteMinutes,
-      sleepDebtMinutes: sleepDebtMinutes,
-    );
-  }
-
   static List<AlarmModel> getAllAlarms() {
     return StorageService.getAllAlarms();
   }
@@ -274,8 +244,9 @@ class AlarmService {
     required String label,
     required List<int> repeatDays,
     required bool isEnabled,
-    required String aiTag,
+    required String tag,
     String sound = 'default',
+    String personality = 'gentle',
   }) {
     return AlarmModel(
       id: _uuid.v4(),
@@ -283,8 +254,9 @@ class AlarmService {
       label: label,
       repeatDays: repeatDays,
       isEnabled: isEnabled,
-      aiTag: aiTag,
+      tag: tag,
       sound: sound,
+      personality: personality,
     );
   }
 
@@ -356,7 +328,7 @@ class AlarmService {
     final shifted = (current + deltaMinutes).clamp(0, (24 * 60) - 1);
     final updated = target.copyWith(
       time: TimeOfDay(hour: shifted ~/ 60, minute: shifted % 60),
-      aiTag: 'Auto-adjusted from mood + sleep check-in',
+      tag: 'Mood-adjusted',
     );
 
     await scheduleAlarm(updated);

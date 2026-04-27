@@ -1,5 +1,5 @@
-name: lumio
-description: "FlowMind minimalist AI focus app."
+name: alarm_plus
+description: "Alarm+ - Smart alarm and wake-up system."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,11 +36,6 @@ dependencies:
   android_alarm_manager_plus: ^4.0.8
   flutter_local_notifications: ^19.4.0
   timezone: ^0.10.1
-  flutter_dotenv: ^5.2.1
-  http: ^1.5.0
-  genkit: ^0.11.1
-  genkit_google_genai: ^0.2.2
-  dart_openai: ^5.1.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   shared_preferences: ^2.5.3
@@ -86,7 +81,6 @@ flutter:
   assets:
     - assets/icon/icon.png
     - assets/icon/icon-splash.png
-    - .env
 
 flutter_launcher_icons:
   android: true

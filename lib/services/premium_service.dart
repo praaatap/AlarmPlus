@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PremiumFeature {
-  aiDailyChoices,
-  aiWeeklyPlanner,
+  dailyWakePlanner,
+  weeklyWakePlanner,
   sleepCoachPro,
   adaptiveAlarmTuning,
   rotatingAlarmSounds,
@@ -37,10 +37,10 @@ class PremiumService {
 
   static String featureTitle(PremiumFeature feature) {
     switch (feature) {
-      case PremiumFeature.aiDailyChoices:
-        return 'AI Daily Choices';
-      case PremiumFeature.aiWeeklyPlanner:
-        return 'AI Weekly Planner';
+      case PremiumFeature.dailyWakePlanner:
+        return 'Daily Wake Planner';
+      case PremiumFeature.weeklyWakePlanner:
+        return 'Weekly Wake Planner';
       case PremiumFeature.sleepCoachPro:
         return 'Sleep Coach Pro';
       case PremiumFeature.adaptiveAlarmTuning:
@@ -58,10 +58,10 @@ class PremiumService {
 
   static String featureDescription(PremiumFeature feature) {
     switch (feature) {
-      case PremiumFeature.aiDailyChoices:
-        return 'Daily AI-picked wake options based on school, gym, and workload.';
-      case PremiumFeature.aiWeeklyPlanner:
-        return 'A full weekly alarm planner with commute and sleep debt balancing.';
+      case PremiumFeature.dailyWakePlanner:
+        return 'Smart daily wake suggestions based on your day type and routine.';
+      case PremiumFeature.weeklyWakePlanner:
+        return 'A full weekly alarm planner with commute and sleep patterns.';
       case PremiumFeature.sleepCoachPro:
         return 'Teen sleep debt, consistency score, and smarter bedtime coaching.';
       case PremiumFeature.adaptiveAlarmTuning:
@@ -83,8 +83,8 @@ class PremiumService {
       PremiumFeature.recoveryDayPlanner,
       PremiumFeature.weekendDriftGuard,
       PremiumFeature.adaptiveAlarmTuning,
-      PremiumFeature.aiDailyChoices,
-      PremiumFeature.aiWeeklyPlanner,
+      PremiumFeature.dailyWakePlanner,
+      PremiumFeature.weeklyWakePlanner,
       PremiumFeature.rotatingAlarmSounds,
       PremiumFeature.smartDismissModes,
     ];

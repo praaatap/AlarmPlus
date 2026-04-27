@@ -1,63 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/alarm_model.dart';
-import 'ai_service.dart';
 import 'alarm_service.dart';
-
-class DailyAlarmChoicesRequest {
-  const DailyAlarmChoicesRequest({
-    required this.dayOfWeek,
-    required this.routine,
-  });
-
-  final int dayOfWeek;
-  final String routine;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is DailyAlarmChoicesRequest &&
-        other.dayOfWeek == dayOfWeek &&
-        other.routine == routine;
-  }
-
-  @override
-  int get hashCode => Object.hash(dayOfWeek, routine);
-}
-
-class WeeklyPlannerRequest {
-  const WeeklyPlannerRequest({
-    required this.routine,
-    required this.meetings,
-    required this.gymDays,
-    required this.commuteMinutes,
-    required this.sleepDebtMinutes,
-  });
-
-  final String routine;
-  final String meetings;
-  final bool gymDays;
-  final int commuteMinutes;
-  final int sleepDebtMinutes;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is WeeklyPlannerRequest &&
-        other.routine == routine &&
-        other.meetings == meetings &&
-        other.gymDays == gymDays &&
-        other.commuteMinutes == commuteMinutes &&
-        other.sleepDebtMinutes == sleepDebtMinutes;
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(routine, meetings, gymDays, commuteMinutes, sleepDebtMinutes);
-}
 
 /// Provider for the current tab index
 final currentTabIndexProvider = StateProvider<int>((ref) => 0);
@@ -87,14 +32,14 @@ class AlarmsNotifier extends StateNotifier<Future<Map<String, AlarmModel>>> {
         label: 'Work Morning',
         repeatDays: const [1, 2, 3, 4, 5],
         isEnabled: true,
-        aiTag: 'Optimal sleep cycle',
+        tag: 'Steady wake',
       ),
       AlarmService.createAlarm(
         time: const TimeOfDay(hour: 7, minute: 15),
         label: 'Gentle Wake',
         repeatDays: const [1, 2, 3, 4, 5, 6, 7],
         isEnabled: true,
-        aiTag: 'Gentle wake AI',
+        tag: 'Gentle wake',
       ),
     ];
 
@@ -128,16 +73,18 @@ class AlarmsNotifier extends StateNotifier<Future<Map<String, AlarmModel>>> {
     required String label,
     required List<int> repeatDays,
     required bool isEnabled,
-    required String aiTag,
+    String tag = '',
     String sound = 'default',
+    String personality = 'gentle',
   }) async {
     final alarm = AlarmService.createAlarm(
       time: time,
       label: label,
       repeatDays: repeatDays,
       isEnabled: isEnabled,
-      aiTag: aiTag,
+      tag: tag,
       sound: sound,
+      personality: personality,
     );
     await saveAlarm(alarm);
   }
@@ -215,55 +162,5 @@ final alarmsListProvider = FutureProvider<List<AlarmModel>>((ref) async {
 /// Provider for vibration setting
 final vibrationEnabledProvider = StateProvider<bool>((ref) => true);
 
-/// Provider for AI suggestions setting
-final aiSuggestionsEnabledProvider = StateProvider<bool>((ref) => true);
-
 /// Provider for theme setting
 final themeDarkProvider = StateProvider<bool>((ref) => false);
-
-/// Provider for AI suggestion with timeout
-final aiSuggestionProvider = FutureProvider.family<String, String>((
-  ref,
-  routine,
-) async {
-  try {
-    return await AlarmService.getAISuggestion(routine).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => throw TimeoutException('AI suggestion timed out'),
-    );
-  } catch (e) {
-    rethrow;
-  }
-});
-
-final dailyAlarmChoicesProvider =
-    FutureProvider.family<List<AiAlarmChoice>, DailyAlarmChoicesRequest>((
-      ref,
-      request,
-    ) async {
-      return AlarmService.getDailyAlarmChoices(
-        dayOfWeek: request.dayOfWeek,
-        routine: request.routine,
-      ).timeout(
-        const Duration(seconds: 12),
-        onTimeout: () =>
-            throw TimeoutException('Daily alarm choices timed out'),
-      );
-    });
-
-final weeklyPlannerProvider =
-    FutureProvider.family<List<WeeklyAlarmPlanItem>, WeeklyPlannerRequest>((
-      ref,
-      request,
-    ) async {
-      return AlarmService.generateWeeklyAlarmPlan(
-        routine: request.routine,
-        meetings: request.meetings,
-        gymDays: request.gymDays,
-        commuteMinutes: request.commuteMinutes,
-        sleepDebtMinutes: request.sleepDebtMinutes,
-      ).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw TimeoutException('Weekly planner timed out'),
-      );
-    });

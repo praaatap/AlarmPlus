@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/alarm_model.dart';
-import 'ai_chip.dart';
 
 class AlarmCard extends StatelessWidget {
   const AlarmCard({super.key, required this.alarm, required this.onToggle});
@@ -76,12 +75,22 @@ class AlarmCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              AiChip(
-                label: alarm.aiTag,
-                icon: alarm.aiTag.toLowerCase().contains('sleep')
-                    ? Icons.bolt_rounded
-                    : Icons.auto_awesome_rounded,
-              ),
+              if (alarm.tag.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    alarm.tag,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF475569),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               const SizedBox(width: 12),
               Text(
                 alarm.repeatLabel,
