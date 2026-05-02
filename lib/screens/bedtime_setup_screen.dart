@@ -90,9 +90,11 @@ class _BedtimeSetupScreenState extends State<BedtimeSetupScreen> {
                 Switch(
                   value: _isEnabled,
                   onChanged: (v) => setState(() => _isEnabled = v),
-                  activeTrackColor: const Color(0xFF22C55E),
-                  activeThumbColor: Colors.white,
-                  inactiveTrackColor: const Color(0xFFE2E8F0),
+                  thumbColor: MaterialStatePropertyAll(Colors.white),
+                  trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                      states.contains(MaterialState.selected)
+                          ? const Color(0xFF22C55E)
+                          : const Color(0xFFE2E8F0)),
                 ),
               ],
             ),

@@ -380,9 +380,11 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
                   Switch(
                     value: _gentleWake,
                     onChanged: (v) => setState(() => _gentleWake = v),
-                    activeTrackColor: const Color(0xFF22C55E),
-                    activeThumbColor: Colors.white,
-                    inactiveTrackColor: const Color(0xFFE2E8F0),
+                    thumbColor: MaterialStatePropertyAll(Colors.white),
+                    trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                        states.contains(MaterialState.selected)
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFFE2E8F0)),
                   ),
                 ],
               ),
@@ -407,7 +409,7 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
               Text('Wake Challenge', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700, fontSize: 18)),
               const SizedBox(height: 10),
               DropdownButtonFormField<ChallengeType?>(
-                initialValue: _challengeType,
+                value: _challengeType,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -453,9 +455,11 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
                   Switch(
                     value: _setAlarm,
                     onChanged: (value) => setState(() => _setAlarm = value),
-                    activeTrackColor: const Color(0xFF22C55E),
-                    activeThumbColor: Colors.white,
-                    inactiveTrackColor: const Color(0xFFE2E8F0),
+                    thumbColor: MaterialStatePropertyAll(Colors.white),
+                    trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                        states.contains(MaterialState.selected)
+                            ? const Color(0xFF22C55E)
+                            : const Color(0xFFE2E8F0)),
                   ),
                 ],
               ),

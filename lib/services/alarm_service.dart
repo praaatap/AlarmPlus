@@ -107,7 +107,7 @@ class AlarmService {
     final settings = AlarmSettings(
       id: alarmId,
       dateTime: targetTime,
-      assetAudioPath: selectedSound == 'default' ? null : selectedSound,
+      assetAudioPath: selectedSound == 'default' ? '' : (selectedSound ?? ''),
       volumeSettings: VolumeSettings.fade(fadeDuration: Duration(seconds: 8)),
       notificationSettings: NotificationSettings(
         title: alarm.label.isEmpty ? 'Alarm+' : alarm.label,

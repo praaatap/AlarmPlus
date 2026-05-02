@@ -126,9 +126,11 @@ class _LocationAlarmScreenState extends State<LocationAlarmScreen> {
                     Switch(
                       value: alarm.isEnabled,
                       onChanged: (v) => _toggle(alarm, v),
-                      activeTrackColor: const Color(0xFF22C55E),
-                      activeThumbColor: Colors.white,
-                      inactiveTrackColor: const Color(0xFFE2E8F0),
+                      thumbColor: MaterialStatePropertyAll(Colors.white),
+                      trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                          states.contains(MaterialState.selected)
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFE2E8F0)),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),

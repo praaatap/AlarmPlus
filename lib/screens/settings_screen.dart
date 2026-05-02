@@ -98,9 +98,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: vibrationEnabled,
               onChanged: (value) =>
                   ref.read(vibrationEnabledProvider.notifier).state = value,
-              activeTrackColor: const Color(0xFF22C55E),
-              activeThumbColor: Colors.white,
-              inactiveTrackColor: const Color(0xFFE2E8F0),
+              thumbColor: MaterialStatePropertyAll(Colors.white),
+              trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                  states.contains(MaterialState.selected)
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFE2E8F0)),
             ),
           ),
           _SettingTile(
@@ -110,9 +112,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: themeDark,
               onChanged: (value) =>
                   ref.read(themeDarkProvider.notifier).state = value,
-              activeTrackColor: const Color(0xFF22C55E),
-              activeThumbColor: Colors.white,
-              inactiveTrackColor: const Color(0xFFE2E8F0),
+              thumbColor: MaterialStatePropertyAll(Colors.white),
+              trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
+                  states.contains(MaterialState.selected)
+                      ? const Color(0xFF22C55E)
+                      : const Color(0xFFE2E8F0)),
             ),
           ),
           const SizedBox(height: 12),
