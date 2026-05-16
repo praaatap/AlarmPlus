@@ -104,7 +104,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/icon/app_icon.png
-  min_sdk_android: 21
+  min_sdk_android: 24
 
 flutter_native_splash:
   color: "#FFFFFF"
