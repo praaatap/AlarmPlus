@@ -236,7 +236,7 @@ class HomeScreen extends ConsumerWidget {
                                 Text(
                                   unlocked
                                       ? (coach?.headline ??
-                                            'Building your teen sleep target...')
+                                            'Enable an alarm to generate your personalised sleep target.')
                                       : 'Unlock Lifetime Premium for ₹299 to get teen sleep debt, weekend drift guard, and bedtime coaching.',
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),

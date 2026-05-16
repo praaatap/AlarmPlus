@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PremiumFeature {
@@ -15,6 +18,9 @@ enum PremiumFeature {
 class PremiumService {
   static const lifetimePriceInr = 299;
   static const _premiumUnlockedKey = 'premium.lifetime.unlocked';
+  static const _productId = 'alarm_plus_lifetime_premium';
+
+  // ─── Local unlock state ──────────────────────────────────────────────────────
 
   static Future<bool> isLifetimePremiumUnlocked() async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,6 +40,135 @@ class PremiumService {
   static Future<bool> canUse(PremiumFeature feature) async {
     return isLifetimePremiumUnlocked();
   }
+
+  // ─── IAP purchase flow ───────────────────────────────────────────────────────
+
+  /// Initiates a real Google Play / App Store purchase.
+  /// Returns true when the purchase completes successfully.
+  static Future<bool> purchaseLifetimePremium(BuildContext context) async {
+    final iap = InAppPurchase.instance;
+
+    final available = await iap.isAvailable();
+    if (!available) {
+      if (context.mounted) {
+        _showSnack(context, 'Store not available. Check your connection.');
+      }
+      return false;
+    }
+
+    final response = await iap.queryProductDetails({_productId});
+    if (response.notFoundIDs.isNotEmpty || response.productDetails.isEmpty) {
+      if (context.mounted) {
+        _showSnack(context, 'Product not found. Please try again later.');
+      }
+      debugPrint('IAP product not found: ${response.notFoundIDs}');
+      return false;
+    }
+
+    final product = response.productDetails.first;
+    final purchaseParam = PurchaseParam(productDetails: product);
+
+    final completer = Completer<bool>();
+    late StreamSubscription<List<PurchaseDetails>> sub;
+
+    sub = iap.purchaseStream.listen((purchases) async {
+      for (final purchase in purchases) {
+        if (purchase.productID != _productId) continue;
+
+        if (purchase.status == PurchaseStatus.purchased ||
+            purchase.status == PurchaseStatus.restored) {
+          await iap.completePurchase(purchase);
+          await unlockLifetimePremium();
+          if (!completer.isCompleted) completer.complete(true);
+          await sub.cancel();
+          return;
+        }
+
+        if (purchase.status == PurchaseStatus.error) {
+          if (!completer.isCompleted) completer.complete(false);
+          await sub.cancel();
+          return;
+        }
+
+        if (purchase.status == PurchaseStatus.canceled) {
+          if (!completer.isCompleted) completer.complete(false);
+          await sub.cancel();
+          return;
+        }
+      }
+    }, onError: (_) async {
+      if (!completer.isCompleted) completer.complete(false);
+      await sub.cancel();
+    });
+
+    final started = await iap.buyNonConsumable(purchaseParam: purchaseParam);
+    if (!started) {
+      await sub.cancel();
+      return false;
+    }
+
+    // Wait for up to 5 minutes for user to complete payment in the store UI.
+    return completer.future.timeout(
+      const Duration(minutes: 5),
+      onTimeout: () async {
+        await sub.cancel();
+        return false;
+      },
+    );
+  }
+
+  /// Restores existing purchases (users who reinstalled the app).
+  static Future<bool> restorePurchases(BuildContext context) async {
+    final iap = InAppPurchase.instance;
+
+    final available = await iap.isAvailable();
+    if (!available) {
+      if (context.mounted) {
+        _showSnack(context, 'Store not available. Check your connection.');
+      }
+      return false;
+    }
+
+    final completer = Completer<bool>();
+    late StreamSubscription<List<PurchaseDetails>> sub;
+
+    sub = iap.purchaseStream.listen((purchases) async {
+      for (final purchase in purchases) {
+        if (purchase.productID != _productId) continue;
+        if (purchase.status == PurchaseStatus.restored) {
+          await iap.completePurchase(purchase);
+          await unlockLifetimePremium();
+          if (!completer.isCompleted) completer.complete(true);
+          await sub.cancel();
+          return;
+        }
+      }
+    }, onDone: () async {
+      if (!completer.isCompleted) completer.complete(false);
+      await sub.cancel();
+    }, onError: (_) async {
+      if (!completer.isCompleted) completer.complete(false);
+      await sub.cancel();
+    });
+
+    await iap.restorePurchases();
+
+    return completer.future.timeout(
+      const Duration(seconds: 15),
+      onTimeout: () async {
+        await sub.cancel();
+        return false;
+      },
+    );
+  }
+
+  static void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  // ─── Feature metadata ────────────────────────────────────────────────────────
 
   static String featureTitle(PremiumFeature feature) {
     switch (feature) {
@@ -98,33 +233,79 @@ class PremiumService {
     return '${featureTitle(feature)} is part of Lifetime Premium for ₹$lifetimePriceInr.\n\n${featureDescription(feature)}';
   }
 
+  // ─── Paywall dialog ──────────────────────────────────────────────────────────
+
+  /// Shows a paywall and initiates a real IAP purchase.
+  /// Returns true if premium was unlocked.
   static Future<bool> showLifetimePaywall(
     BuildContext context,
     PremiumFeature feature,
   ) async {
-    final unlocked = await showDialog<bool>(
+    final proceed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text('Unlock ${featureTitle(feature)}'),
-        content: Text(paywallMessage(feature)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(paywallMessage(feature)),
+            const SizedBox(height: 16),
+            const Text(
+              'Payment is processed securely through Google Play.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () async {
+              Navigator.pop(ctx, false);
+              if (ctx.mounted) {
+                final restored = await restorePurchases(ctx);
+                if (ctx.mounted && restored) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Premium restored!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Restore'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Not now'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Unlock Lifetime ₹299'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Unlock ₹299'),
           ),
         ],
       ),
     );
 
-    if (unlocked == true) {
-      await unlockLifetimePremium();
-      return true;
+    if (proceed != true) return false;
+
+    if (!context.mounted) return false;
+
+    // Show loading while purchase is in flight
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Opening payment…'),
+        duration: Duration(seconds: 60),
+      ),
+    );
+
+    final success = await purchaseLifetimePremium(context);
+    messenger.hideCurrentSnackBar();
+
+    if (success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lifetime Premium unlocked!')),
+      );
     }
 
-    return false;
+    return success;
   }
 }

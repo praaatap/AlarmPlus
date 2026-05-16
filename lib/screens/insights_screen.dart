@@ -190,17 +190,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                                 color: const Color(0xFFE2E8F0),
                               ),
                             ),
-                            child: Text(
-                              unlocked
-                                  ? (premiumSleep == null
-                                        ? (coach == null
-                                              ? 'Building your sleep insight...'
-                                              : coach.headline)
-                                        : '${premiumSleep.recoveryHeadline} Recovery ${premiumSleep.recoveryIntensity} · Actions ${premiumSleep.recoveryActions.take(2).join(' · ')}')
-                                  : 'Sleep Coach Pro, recovery planner, and weekend drift guard are part of Lifetime Premium ₹299.',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
+                            child: unlocked && coach == null && premiumSleep == null
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Text(
+                                    unlocked
+                                        ? (premiumSleep != null
+                                              ? '${premiumSleep.recoveryHeadline} · Recovery ${premiumSleep.recoveryIntensity} · ${premiumSleep.recoveryActions.take(2).join(' · ')}'
+                                              : coach?.headline ?? 'Enable an alarm to get your personalised sleep coach target.')
+                                        : 'Sleep Coach Pro, recovery planner, and weekend drift guard are part of Lifetime Premium ₹299.',
+                                    style: Theme.of(context).textTheme.bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
                           );
                         },
                       );

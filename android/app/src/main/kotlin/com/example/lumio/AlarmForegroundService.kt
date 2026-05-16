@@ -62,7 +62,12 @@ class AlarmForegroundService : Service() {
             .setAutoCancel(false)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+: must declare a matching foreground service type.
+            // Manifest declares shortService which maps to FOREGROUND_SERVICE_TYPE_SHORT_SERVICE.
+            startForeground(NOTIFICATION_ID, notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification,
                 android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE)
         } else {

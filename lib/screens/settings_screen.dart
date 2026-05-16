@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/alarm_providers.dart';
 import '../services/premium_service.dart';
@@ -8,6 +10,7 @@ import 'alarm_ring_screen.dart';
 import 'bedtime_setup_screen.dart';
 import 'location_alarm_screen.dart';
 import 'sleep_insights_screen.dart';
+import 'sound_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -22,6 +25,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late Future<DismissChallengeType> _dismissChallengeFuture;
   late Future<int> _windDownFuture;
   late Future<AlarmStats> _statsFuture;
+  late Future<PackageInfo> _packageInfoFuture;
+
+  static const _privacyPolicyUrl =
+      'https://sites.google.com/view/alarmplus-privacy/home';
 
   @override
   void initState() {
@@ -35,6 +42,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _dismissChallengeFuture = SmartAlarmService.getDismissChallenge();
     _windDownFuture = SmartAlarmService.getWindDownMinutes();
     _statsFuture = SmartAlarmService.getStats();
+    _packageInfoFuture = PackageInfo.fromPlatform();
   }
 
   void _refreshAndRebuild() {
@@ -89,7 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Sound',
             subtitle: 'Wake tone and ring volume',
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {},
+            onTap: () => Navigator.of(context).pushNamed(SoundSettingsScreen.routeName),
           ),
           _SettingTile(
             title: 'Vibration',
@@ -203,8 +211,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => Navigator.of(context).pushNamed('/sleep-diary'),
           ),
+          _SettingTile(
+            title: 'Privacy Policy',
+            subtitle: 'How we handle your data',
+            trailing: const Icon(Icons.open_in_new_rounded),
+            onTap: () => _openPrivacyPolicy(context),
+          ),
+          FutureBuilder<PackageInfo>(
+            future: _packageInfoFuture,
+            builder: (context, snapshot) {
+              final info = snapshot.data;
+              final version = info == null
+                  ? ''
+                  : 'v${info.version} (${info.buildNumber})';
+              return _SettingTile(
+                title: 'About Alarm+',
+                subtitle: 'Smart alarm for better mornings · $version',
+                trailing: const Icon(Icons.info_outline_rounded),
+                onTap: () => _showAboutDialog(context, info),
+              );
+            },
+          ),
         ],
       ),
+    );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final uri = Uri.parse(_privacyPolicyUrl);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open privacy policy.')),
+        );
+      }
+    }
+  }
+
+  void _showAboutDialog(BuildContext context, PackageInfo? info) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Alarm+',
+      applicationVersion: info != null
+          ? 'v${info.version} (build ${info.buildNumber})'
+          : '',
+      applicationIcon: const Icon(Icons.alarm_rounded, size: 48),
+      children: [
+        const SizedBox(height: 8),
+        const Text(
+          'Smart alarm with wake-up challenges, sleep coaching, '
+          'gamification and morning routines — built for teens and young adults.',
+        ),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            _openPrivacyPolicy(context);
+          },
+          child: const Text('Privacy Policy'),
+        ),
+      ],
     );
   }
 
@@ -228,11 +294,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return;
     }
 
-    await PremiumService.showLifetimePaywall(
+    final purchased = await PremiumService.showLifetimePaywall(
       context,
       PremiumFeature.sleepCoachPro,
     );
-    _refreshAndRebuild();
+    if (purchased) _refreshAndRebuild();
   }
 
   void _showReliabilityDialog(

@@ -15,6 +15,7 @@ import 'screens/morning_missions_screen.dart';
 import 'screens/nap_timer_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/sleep_diary_screen.dart';
+import 'screens/sound_settings_screen.dart';
 import 'screens/sleep_insights_screen.dart';
 import 'screens/sleep_sounds_screen.dart';
 import 'screens/splash_screen.dart';
@@ -23,6 +24,7 @@ import 'screens/wind_down_screen.dart';
 import 'services/alarm_providers.dart';
 import 'services/alarm_service.dart';
 import 'services/alarm_ring_flow.dart';
+import 'services/location_alarm_service.dart';
 import 'services/nap_service.dart';
 import 'services/storage_service.dart';
 
@@ -33,6 +35,7 @@ Future<void> main() async {
   await AlarmService.restoreEnabledAlarms();
   AlarmRingFlow.bindNativeAlarmEvents();
   await NapService.checkMissedNap();
+  await LocationAlarmService.startMonitoring();
   runApp(const AlarmPlusApp());
 }
 
@@ -110,6 +113,7 @@ class AlarmPlusApp extends StatelessWidget {
           SleepDiaryScreen.routeName: (_) => const SleepDiaryScreen(),
           MorningCheckInScreen.routeName: (_) => const MorningCheckInScreen(),
           NapTimerScreen.routeName: (_) => const NapTimerScreen(),
+          SoundSettingsScreen.routeName: (_) => const SoundSettingsScreen(),
         },
       ),
     );

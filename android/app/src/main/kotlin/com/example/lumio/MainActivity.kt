@@ -12,7 +12,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 
     companion object {
-        const val METHOD_CHANNEL = "lumio/alarm_controls"
+        const val METHOD_CHANNEL = "alarmplus/alarm_controls"
         const val ENGINE_ID = "main_engine"
     }
 
