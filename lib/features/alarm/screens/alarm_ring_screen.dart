@@ -147,7 +147,9 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
       try {
         await VoiceMemoService.playMemo(alarm!.voiceMemoPath!);
         await Future<void>.delayed(const Duration(milliseconds: 500));
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Voice memo playback failed: $e');
+      }
     }
 
     setState(() => _isDismissing = true);

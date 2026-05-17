@@ -865,7 +865,8 @@ class SmartAlarmService {
     try {
       final notification = await Permission.notification.status;
       notificationsGranted = notification.isGranted;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error checking notification status: $e');
       // Keep a safe fallback on platforms where notification status is not exposed.
     }
 
@@ -875,7 +876,8 @@ class SmartAlarmService {
       try {
         final exactAlarm = await Permission.scheduleExactAlarm.status;
         exactAlarmGranted = exactAlarm.isGranted;
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Error checking exact alarm status: $e');
         exactAlarmGranted = false;
       }
 
@@ -883,7 +885,8 @@ class SmartAlarmService {
         batteryIgnored = await Permission.ignoreBatteryOptimizations.status.then(
           (value) => value.isGranted,
         );
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Error checking battery optimization status: $e');
         batteryIgnored = true;
       }
     }
@@ -1039,7 +1042,9 @@ class SmartAlarmService {
     if (raw != null && raw.isNotEmpty) {
       try {
         history = Map<String, dynamic>.from(jsonDecode(raw) as Map<String, dynamic>);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Failed to parse dismiss history: $e');
+      }
     }
     final today = DateTime.now();
     final key = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
@@ -1180,7 +1185,9 @@ class SmartAlarmService {
         try {
           final list = jsonDecode(raw) as List<dynamic>;
           return list.map((m) => MissionModel.fromMap(Map<String, dynamic>.from(m as Map))).toList();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Failed to parse cached missions: $e');
+        }
       }
     }
 
@@ -1202,7 +1209,9 @@ class SmartAlarmService {
         for (final m in list) {
           customMissions.add(Map<String, String>.from(m as Map));
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Failed to parse custom missions: $e');
+      }
     }
 
     final allPool = [..._missionPool, ...customMissions];
@@ -1268,7 +1277,9 @@ class SmartAlarmService {
       try {
         final decoded = jsonDecode(raw) as List<dynamic>;
         for (final m in decoded) { list.add(Map<String, String>.from(m as Map)); }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Failed to parse personality usage map: $e');
+      }
     }
     list.add({'id': const Uuid().v4(), 'title': title, 'icon': icon});
     await prefs.setString(_missionsCustomKey, jsonEncode(list));

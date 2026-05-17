@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alarm_plus/features/alarm/models/alarm_model.dart';
 
 class StorageService {
-  static const String _settingsKey = 'flowmind_settings';
   static const String _alarmsKey = 'flowmind_alarms';
   
   static late final Box _alarmsBox;

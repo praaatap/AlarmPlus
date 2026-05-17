@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -43,7 +44,9 @@ class VoiceMemoService {
       if (await file.exists()) {
         await file.delete();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to delete voice memo: $e');
+    }
   }
 
   static bool get isRecording => _recorder.isRecording;

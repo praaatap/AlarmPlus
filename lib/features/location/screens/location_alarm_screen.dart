@@ -126,9 +126,9 @@ class _LocationAlarmScreenState extends State<LocationAlarmScreen> {
                     Switch(
                       value: alarm.isEnabled,
                       onChanged: (v) => _toggle(alarm, v),
-                      thumbColor: MaterialStatePropertyAll(Colors.white),
-                      trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
-                          states.contains(MaterialState.selected)
+                      thumbColor: WidgetStatePropertyAll(Colors.white),
+                      trackColor: WidgetStateProperty.resolveWith<Color?>((states) =>
+                          states.contains(WidgetState.selected)
                               ? const Color(0xFF22C55E)
                               : const Color(0xFFE2E8F0)),
                     ),

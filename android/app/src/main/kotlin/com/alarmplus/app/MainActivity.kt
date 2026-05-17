@@ -1,4 +1,4 @@
-package com.example.lumio
+package com.alarmplus.app
 
 import android.app.Activity
 import android.app.KeyguardManager

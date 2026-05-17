@@ -386,9 +386,9 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
                   Switch(
                     value: _gentleWake,
                     onChanged: (v) => setState(() => _gentleWake = v),
-                    thumbColor: MaterialStatePropertyAll(Colors.white),
-                    trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
-                        states.contains(MaterialState.selected)
+                    thumbColor: WidgetStatePropertyAll(Colors.white),
+                    trackColor: WidgetStateProperty.resolveWith<Color?>((states) =>
+                        states.contains(WidgetState.selected)
                             ? const Color(0xFF22C55E)
                             : const Color(0xFFE2E8F0)),
                   ),
@@ -602,9 +602,9 @@ class _AddAlarmSheetState extends ConsumerState<_AddAlarmSheet> {
                   Switch(
                     value: _setAlarm,
                     onChanged: (value) => setState(() => _setAlarm = value),
-                    thumbColor: MaterialStatePropertyAll(Colors.white),
-                    trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
-                        states.contains(MaterialState.selected)
+                    thumbColor: WidgetStatePropertyAll(Colors.white),
+                    trackColor: WidgetStateProperty.resolveWith<Color?>((states) =>
+                        states.contains(WidgetState.selected)
                             ? const Color(0xFF22C55E)
                             : const Color(0xFFE2E8F0)),
                   ),

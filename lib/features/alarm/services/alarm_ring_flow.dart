@@ -210,12 +210,16 @@ class AlarmRingFlow {
   static Future<void> _startForegroundService(int alarmId) async {
     try {
       await _channel.invokeMethod<void>('startAlarmService', {'alarmId': alarmId});
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('startAlarmService channel error: $e');
+    }
   }
 
   static Future<void> _stopForegroundService() async {
     try {
       await _channel.invokeMethod<void>('stopAlarmService');
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('stopAlarmService channel error: $e');
+    }
   }
 }

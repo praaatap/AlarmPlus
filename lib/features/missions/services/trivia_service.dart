@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,7 +44,9 @@ class TriviaService {
         try {
           final list = jsonDecode(raw) as List<dynamic>;
           return list.map((e) => TriviaQuestion.fromMap(e as Map<String, dynamic>)).toList();
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Failed to parse cached trivia questions: $e');
+        }
       }
     }
 

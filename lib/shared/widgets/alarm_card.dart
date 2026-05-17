@@ -65,12 +65,12 @@ class AlarmCard extends StatelessWidget {
               Switch(
                 value: alarm.isEnabled,
                 onChanged: onToggle,
-                thumbColor: MaterialStateProperty.resolveWith<Color?>((states) =>
-                    states.contains(MaterialState.selected)
+                thumbColor: WidgetStateProperty.resolveWith<Color?>((states) =>
+                    states.contains(WidgetState.selected)
                         ? Colors.white
                         : const Color(0xFFE2E8F0)),
-                trackColor: MaterialStateProperty.resolveWith<Color?>((states) =>
-                    states.contains(MaterialState.selected)
+                trackColor: WidgetStateProperty.resolveWith<Color?>((states) =>
+                    states.contains(WidgetState.selected)
                         ? const Color(0xFF22C55E)
                         : const Color(0xFFF1F5F9)),
               ),

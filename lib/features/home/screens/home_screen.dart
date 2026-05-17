@@ -659,7 +659,9 @@ class HomeScreen extends ConsumerWidget {
           sleepQuality: sleep.round(),
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Auto-adjust alarm from mood failed: $e');
+    }
 
     if (!context.mounted) {
       return;

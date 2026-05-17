@@ -49,7 +49,10 @@ class AlarmService {
       settings,
       onDidReceiveNotificationResponse: _onNotificationResponse,
       onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTap,
-    );
+    ).catchError((e) {
+      debugPrint('Error initializing notifications: $e');
+      return false;
+    });
     await requestPermissions();
   }
 
@@ -72,11 +75,15 @@ class AlarmService {
       return;
     }
 
-    await Permission.notification.request();
+    try {
+      await Permission.notification.request();
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      await Permission.scheduleExactAlarm.request();
-      await Permission.ignoreBatteryOptimizations.request();
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        await Permission.scheduleExactAlarm.request();
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
     }
   }
 
