@@ -100,7 +100,6 @@ flutter:
 
   assets:
     - assets/icon/icon.png
-    - assets/icon/icon-splash.png
     - assets/icon/app_icon.png
     - assets/sounds/
     - assets/data/
