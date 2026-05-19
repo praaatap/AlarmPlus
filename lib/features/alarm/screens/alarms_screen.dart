@@ -38,11 +38,17 @@ class AlarmsScreen extends ConsumerWidget {
           children: [
             ...alarms.map(
               (alarm) => AlarmCard(
+                key: ValueKey(alarm.id),
                 alarm: alarm,
                 onToggle: (enabled) {
                   ref
                       .read(alarmsMapProvider.notifier)
                       .toggleAlarm(alarm.id, enabled);
+                },
+                onDelete: () {
+                  ref
+                      .read(alarmsMapProvider.notifier)
+                      .cancelAlarm(alarm.id);
                 },
               ),
             ),

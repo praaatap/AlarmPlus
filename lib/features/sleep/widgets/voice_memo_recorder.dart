@@ -48,7 +48,8 @@ class _VoiceMemoRecorderState extends State<VoiceMemoRecorder>
   }
 
   Future<void> _startRecording() async {
-    await VoiceMemoService.startRecording();
+    final started = await VoiceMemoService.startRecording();
+    if (started == null) return;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _seconds++);
     });

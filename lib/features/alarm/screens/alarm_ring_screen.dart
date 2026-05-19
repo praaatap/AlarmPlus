@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:volume_controller/volume_controller.dart';
@@ -24,6 +27,7 @@ import 'package:alarm_plus/features/alarm/widgets/math_challenge_widget.dart';
 import 'package:alarm_plus/features/alarm/widgets/quest_runner_widget.dart';
 import 'package:alarm_plus/shared/widgets/sunrise_gradient.dart';
 import 'package:alarm_plus/features/sleep/screens/wake_routine_screen.dart';
+import 'package:alarm_plus/core/services/guardian_service.dart';
 
 class AlarmRingScreen extends StatefulWidget {
   const AlarmRingScreen({super.key});
@@ -45,6 +49,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
   int _wrongAnswers = 0;
   int _quickSolveXp = 0;
   final int _dismissStartMs = DateTime.now().millisecondsSinceEpoch;
+  Timer? _guardianTimer;
 
   // Gentle wake volume ramp
   int _gentleSecondsLeft = 0;
@@ -91,6 +96,9 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
           _startGentleWake(alarm);
         }
       }
+      _guardianTimer = Timer(const Duration(minutes: 10), () {
+        GuardianService.triggerAlert(alarmId);
+      });
     }
   }
 
@@ -115,6 +123,7 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
 
   @override
   void dispose() {
+    _guardianTimer?.cancel();
     _pulseController.dispose();
     _ringController.dispose();
     super.dispose();
@@ -142,16 +151,18 @@ class _AlarmRingScreenState extends State<AlarmRingScreen>
       }
     }
 
-    // Auto-play voice memo if present
-    if (alarm?.voiceMemoPath != null) {
+    // Auto-play voice memo if present and file still exists
+    final memoPath = alarm?.voiceMemoPath;
+    if (memoPath != null && await File(memoPath).exists()) {
       try {
-        await VoiceMemoService.playMemo(alarm!.voiceMemoPath!);
+        await VoiceMemoService.playMemo(memoPath);
         await Future<void>.delayed(const Duration(milliseconds: 500));
       } catch (e) {
         debugPrint('Voice memo playback failed: $e');
       }
     }
 
+    _guardianTimer?.cancel();
     setState(() => _isDismissing = true);
     final reward = await AlarmRingFlow.stopAlarm(alarmId);
     if (!mounted) return;

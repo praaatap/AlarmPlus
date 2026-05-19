@@ -398,6 +398,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           TextButton(
             onPressed: () async {
+              final url = controller.text.trim();
+              if (url.isEmpty) return;
+              await GuardianService.setWebhookUrl(url);
+              await GuardianService.triggerAlert(-1);
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Test alert sent to webhook.')),
+                );
+              }
+            },
+            child: const Text('Test'),
+          ),
+          TextButton(
+            onPressed: () async {
               await GuardianService.setWebhookUrl(controller.text.trim());
               if (ctx.mounted) Navigator.pop(ctx);
               _refreshAndRebuild();

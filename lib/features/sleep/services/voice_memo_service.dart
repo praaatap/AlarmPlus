@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class VoiceMemoService {
   static final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
@@ -17,7 +18,12 @@ class VoiceMemoService {
     }
   }
 
-  static Future<String> startRecording() async {
+  static Future<String?> startRecording() async {
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      debugPrint('VoiceMemoService: microphone permission denied');
+      return null;
+    }
     await _ensureRecorderOpen();
     final dir = await getApplicationDocumentsDirectory();
     final path = '${dir.path}/memo_${DateTime.now().millisecondsSinceEpoch}.aac';

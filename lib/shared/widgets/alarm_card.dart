@@ -3,13 +3,61 @@ import 'package:flutter/material.dart';
 import 'package:alarm_plus/features/alarm/models/alarm_model.dart';
 
 class AlarmCard extends StatelessWidget {
-  const AlarmCard({super.key, required this.alarm, required this.onToggle});
+  const AlarmCard({
+    super.key,
+    required this.alarm,
+    required this.onToggle,
+    this.onDelete,
+  });
 
   final AlarmModel alarm;
   final ValueChanged<bool> onToggle;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final card = _buildCard(context);
+    if (onDelete == null) return card;
+
+    return Dismissible(
+      key: ValueKey(alarm.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 28),
+        margin: const EdgeInsets.only(bottom: 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (_) => showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Delete Alarm?'),
+          content: Text(
+            '${alarm.timeLabel} ${alarm.periodLabel}${alarm.label.isNotEmpty ? ' — ${alarm.label}' : ''} will be permanently removed.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF4444)),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) => onDelete!(),
+      child: card,
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
     final color = alarm.isEnabled
         ? const Color(0xFF0F172A)
         : const Color(0xFF94A3B8);
@@ -103,6 +151,37 @@ class AlarmCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const Spacer(),
+              if (onDelete != null)
+                GestureDetector(
+                  onTap: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Alarm?'),
+                        content: Text(
+                          '${alarm.timeLabel} ${alarm.periodLabel}${alarm.label.isNotEmpty ? ' — ${alarm.label}' : ''} will be permanently removed.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF4444)),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) onDelete!();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.delete_outline_rounded, color: Color(0xFFCBD5E1), size: 20),
+                  ),
+                ),
             ],
           ),
         ],

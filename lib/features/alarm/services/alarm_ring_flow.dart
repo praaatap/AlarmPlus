@@ -36,10 +36,14 @@ class AlarmRingFlow {
   // Tracks ring start time for Guardian Alert threshold
   static final Map<int, DateTime> _ringStartTimes = <int, DateTime>{};
   static final Map<int, Timer> _guardianTimers = <int, Timer>{};
-  // Tracks pending wake-up check timers
+  // Tracks pending wake-up check timers (notification delay + re-ring timer)
   static final Map<int, Timer> _wakeUpCheckTimers = <int, Timer>{};
+  static final Map<int, Timer> _wakeUpReringTimers = <int, Timer>{};
 
   static void bindNativeAlarmEvents() {
+    // Register wake-check tap handler to avoid circular import
+    AlarmService.registerWakeCheckHandler(cancelWakeUpCheck);
+
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'snooze') {
         final id = (call.arguments as int?) ?? _currentRingingId;
@@ -164,8 +168,10 @@ class AlarmRingFlow {
 
     await _stopEffects();
 
-    appNavigatorKey.currentState?.pop();
-    _ringScreenVisible = false;
+    if (_ringScreenVisible) {
+      appNavigatorKey.currentState?.pop();
+      _ringScreenVisible = false;
+    }
   }
 
   /// Stops the alarm and records XP/badges. Does NOT pop the ring screen —
@@ -238,7 +244,9 @@ class AlarmRingFlow {
     );
 
     // If not tapped within 60 s, re-ring the alarm
-    Timer(const Duration(seconds: 60), () async {
+    _wakeUpReringTimers[alarmId]?.cancel();
+    _wakeUpReringTimers[alarmId] = Timer(const Duration(seconds: 60), () async {
+      _wakeUpReringTimers.remove(alarmId);
       await _notifications.cancel(checkId);
       await AlarmService.scheduleAlarm(
         alarm.copyWith(
@@ -254,6 +262,8 @@ class AlarmRingFlow {
   static void cancelWakeUpCheck(int alarmId) {
     _wakeUpCheckTimers[alarmId]?.cancel();
     _wakeUpCheckTimers.remove(alarmId);
+    _wakeUpReringTimers[alarmId]?.cancel();
+    _wakeUpReringTimers.remove(alarmId);
     _notifications.cancel(alarmId + 2000000);
   }
 
@@ -284,8 +294,10 @@ class AlarmRingFlow {
     _ringStartTimes.remove(alarmId);
     await SmartAlarmService.recordDismissed(hadSnooze: false, snoozeCount: 0);
     await _stopEffects();
-    appNavigatorKey.currentState?.pop();
-    _ringScreenVisible = false;
+    if (_ringScreenVisible) {
+      appNavigatorKey.currentState?.pop();
+      _ringScreenVisible = false;
+    }
     _currentRingingId = 0;
   }
 

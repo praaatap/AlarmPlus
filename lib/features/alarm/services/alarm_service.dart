@@ -29,6 +29,12 @@ class AlarmService {
 
   static Stream<int> get ringIntents => _ringIntents.stream;
 
+  // Registered by AlarmRingFlow to handle wake-check notification taps
+  static void Function(int alarmId)? _onWakeCheckTapped;
+  static void registerWakeCheckHandler(void Function(int alarmId) handler) {
+    _onWakeCheckTapped = handler;
+  }
+
   static bool get _supportsNativeAlarmOps => !kIsWeb;
 
   static Future<void> init() async {
@@ -62,10 +68,19 @@ class AlarmService {
 
   static void _onNotificationResponse(NotificationResponse response) {
     final payload = response.payload?.trim() ?? '';
-    final alarmId = int.tryParse(payload);
-    if (alarmId == null) {
+
+    // Wake-up check notification: user confirmed they're awake — cancel re-ring
+    if (payload.startsWith('wakecheck:')) {
+      final idStr = payload.substring('wakecheck:'.length);
+      final alarmId = int.tryParse(idStr);
+      if (alarmId != null) {
+        _onWakeCheckTapped?.call(alarmId);
+      }
       return;
     }
+
+    final alarmId = int.tryParse(payload);
+    if (alarmId == null) return;
     _ringIntents.add(alarmId);
   }
 

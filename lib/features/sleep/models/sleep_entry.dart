@@ -7,6 +7,7 @@ class SleepEntry {
     this.bedtime,
     this.wakeTime,
     this.deepSleepEstimate,
+    this.voiceMemoPath,
   });
 
   final String date; // 'YYYY-MM-DD'
@@ -16,6 +17,7 @@ class SleepEntry {
   final DateTime? bedtime;
   final DateTime? wakeTime;
   final int? deepSleepEstimate; // minutes
+  final String? voiceMemoPath;
 
   Map<String, dynamic> toJson() => {
     'date': date,
@@ -25,6 +27,7 @@ class SleepEntry {
     'bedtime': bedtime?.toIso8601String(),
     'wakeTime': wakeTime?.toIso8601String(),
     'deepSleepEstimate': deepSleepEstimate,
+    'voiceMemoPath': voiceMemoPath,
   };
 
   factory SleepEntry.fromJson(Map<String, dynamic> json) => SleepEntry(
@@ -35,6 +38,7 @@ class SleepEntry {
     bedtime: json['bedtime'] != null ? DateTime.parse(json['bedtime'] as String) : null,
     wakeTime: json['wakeTime'] != null ? DateTime.parse(json['wakeTime'] as String) : null,
     deepSleepEstimate: json['deepSleepEstimate'] as int?,
+    voiceMemoPath: json['voiceMemoPath'] as String?,
   );
 
   SleepEntry copyWith({
@@ -45,6 +49,8 @@ class SleepEntry {
     DateTime? bedtime,
     DateTime? wakeTime,
     int? deepSleepEstimate,
+    String? voiceMemoPath,
+    bool clearVoiceMemo = false,
   }) => SleepEntry(
     date: date ?? this.date,
     sleepQuality: sleepQuality ?? this.sleepQuality,
@@ -53,5 +59,6 @@ class SleepEntry {
     bedtime: bedtime ?? this.bedtime,
     wakeTime: wakeTime ?? this.wakeTime,
     deepSleepEstimate: deepSleepEstimate ?? this.deepSleepEstimate,
+    voiceMemoPath: clearVoiceMemo ? null : (voiceMemoPath ?? this.voiceMemoPath),
   );
 }

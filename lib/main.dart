@@ -15,6 +15,7 @@ import 'package:alarm_plus/features/focus/services/nap_service.dart';
 import 'package:alarm_plus/features/home/screens/home_screen.dart';
 import 'package:alarm_plus/features/home/screens/insights_screen.dart';
 import 'package:alarm_plus/features/home/screens/splash_screen.dart';
+import 'package:alarm_plus/features/home/screens/onboarding_screen.dart';
 import 'package:alarm_plus/features/location/screens/location_alarm_screen.dart';
 import 'package:alarm_plus/features/location/screens/location_picker_screen.dart';
 import 'package:alarm_plus/features/location/services/location_alarm_service.dart';
@@ -46,61 +47,124 @@ class AlarmPlusApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const ProviderScope(
+      child: _AppWithTheme(),
+    );
+  }
+}
+
+class _AppWithTheme extends ConsumerWidget {
+  const _AppWithTheme();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = ref.watch(themeDarkProvider);
     final baseTextTheme = GoogleFonts.dmSansTextTheme();
 
-    return ProviderScope(
-      child: MaterialApp(
-        navigatorKey: appNavigatorKey,
-        title: 'Alarm+',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.white,
-          colorScheme: const ColorScheme.light(
-            surface: Colors.white,
-            primary: Color(0xFF22C55E),
-            secondary: Color(0xFF94A3B8),
-          ),
-          textTheme: baseTextTheme.copyWith(
-            headlineLarge: GoogleFonts.spaceGrotesk(
-              fontSize: 44,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
-            ),
-            headlineMedium: GoogleFonts.spaceGrotesk(
-              fontSize: 34,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
-            ),
-            titleLarge: GoogleFonts.spaceGrotesk(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-            ),
-            bodyLarge: GoogleFonts.dmSans(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF0F172A),
-            ),
-            bodyMedium: GoogleFonts.dmSans(
-              fontSize: 16,
-              color: const Color(0xFF334155),
-            ),
-            bodySmall: GoogleFonts.dmSans(
-              fontSize: 13,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF94A3B8),
-            ),
-          ),
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            surfaceTintColor: Colors.white,
-          ),
+    final lightTheme = ThemeData(
+      scaffoldBackgroundColor: Colors.white,
+      colorScheme: const ColorScheme.light(
+        surface: Colors.white,
+        primary: Color(0xFF22C55E),
+        secondary: Color(0xFF94A3B8),
+      ),
+      textTheme: baseTextTheme.copyWith(
+        headlineLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 44,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF0F172A),
         ),
-        routes: {
+        headlineMedium: GoogleFonts.spaceGrotesk(
+          fontSize: 34,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF0F172A),
+        ),
+        titleLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF0F172A),
+        ),
+        bodyLarge: GoogleFonts.dmSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFF0F172A),
+        ),
+        bodyMedium: GoogleFonts.dmSans(
+          fontSize: 16,
+          color: const Color(0xFF334155),
+        ),
+        bodySmall: GoogleFonts.dmSans(
+          fontSize: 13,
+          letterSpacing: 1.1,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF94A3B8),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.white,
+      ),
+    );
+
+    final darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF0F172A),
+      colorScheme: const ColorScheme.dark(
+        surface: Color(0xFF1E293B),
+        primary: Color(0xFF22C55E),
+        secondary: Color(0xFF94A3B8),
+      ),
+      textTheme: baseTextTheme.copyWith(
+        headlineLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 44,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+        headlineMedium: GoogleFonts.spaceGrotesk(
+          fontSize: 34,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+        titleLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 30,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+        bodyLarge: GoogleFonts.dmSans(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+        bodyMedium: GoogleFonts.dmSans(
+          fontSize: 16,
+          color: const Color(0xFFCBD5E1),
+        ),
+        bodySmall: GoogleFonts.dmSans(
+          fontSize: 13,
+          letterSpacing: 1.1,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF94A3B8),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF0F172A),
+        elevation: 0,
+        surfaceTintColor: Color(0xFF0F172A),
+      ),
+    );
+
+    return MaterialApp(
+      navigatorKey: appNavigatorKey,
+      title: 'Alarm+',
+      debugShowCheckedModeBanner: false,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      routes: {
           '/': (_) => const SplashScreen(),
           '/app': (_) => const MainScaffold(),
+          OnboardingScreen.routeName: (_) => const OnboardingScreen(),
           FocusTimerScreen.routeName: (_) => const FocusTimerScreen(),
           AlarmRingScreen.routeName: (_) => const AlarmRingScreen(),
           MorningMissionsScreen.routeName: (_) => const MorningMissionsScreen(),
@@ -119,7 +183,6 @@ class AlarmPlusApp extends StatelessWidget {
           QrSpotSetupScreen.routeName: (_) => const QrSpotSetupScreen(),
           QuestBuilderScreen.routeName: (_) => const QuestBuilderScreen(),
         },
-      ),
     );
   }
 }

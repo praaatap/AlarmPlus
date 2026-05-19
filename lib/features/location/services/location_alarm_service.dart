@@ -50,11 +50,13 @@ class LocationAlarmService {
 
   static Future<bool> requestPermission() async {
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
       permission = await Geolocator.requestPermission();
     }
-    return permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse;
+    // Location alarms require "always" permission to fire when the app is closed.
+    // "While in use" will silently fail for background geo-fence triggers.
+    return permission == LocationPermission.always;
   }
 
   static Future<void> startMonitoring() async {

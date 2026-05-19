@@ -1,6 +1,7 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:alarm_plus/features/alarm/services/alarm_service.dart';
 
@@ -77,10 +78,12 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _onTextFinished() {
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/app');
-      }
+    Future.delayed(const Duration(milliseconds: 600), () async {
+      if (!mounted) return;
+      final prefs = await SharedPreferences.getInstance();
+      final done = prefs.getBool('onboarding_complete') ?? false;
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(done ? '/app' : '/onboarding');
     });
   }
 

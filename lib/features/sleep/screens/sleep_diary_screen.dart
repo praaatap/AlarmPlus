@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:alarm_plus/features/sleep/models/sleep_entry.dart';
 import 'package:alarm_plus/features/sleep/services/sleep_diary_service.dart';
 import 'package:alarm_plus/core/services/smart_alarm_service.dart';
+import 'package:alarm_plus/features/sleep/widgets/voice_memo_recorder.dart';
 
 class SleepDiaryScreen extends StatefulWidget {
   const SleepDiaryScreen({super.key});
@@ -21,6 +22,7 @@ class _SleepDiaryScreenState extends State<SleepDiaryScreen> {
   int _sleepQuality = 3;
   int _morningMood = 3;
   int _deepSleepMinutes = 0;
+  String? _voiceMemoPath;
   final _notesController = TextEditingController();
 
   @override
@@ -43,6 +45,7 @@ class _SleepDiaryScreenState extends State<SleepDiaryScreen> {
       _sleepQuality = entry?.sleepQuality ?? 3;
       _morningMood = entry?.morningMood ?? 3;
       _deepSleepMinutes = entry?.deepSleepEstimate ?? 0;
+      _voiceMemoPath = entry?.voiceMemoPath;
       _notesController.text = entry?.notes ?? '';
       _loading = false;
     });
@@ -56,6 +59,7 @@ class _SleepDiaryScreenState extends State<SleepDiaryScreen> {
       morningMood: _morningMood,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       deepSleepEstimate: _deepSleepMinutes,
+      voiceMemoPath: _voiceMemoPath,
     );
     await SleepDiaryService.saveEntry(entry);
     await SmartAlarmService.addXp(10);
@@ -159,6 +163,13 @@ class _SleepDiaryScreenState extends State<SleepDiaryScreen> {
                               color: Color(0xFF6366F1)),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionLabel('Voice Memo (optional)'),
+                    const SizedBox(height: 10),
+                    VoiceMemoRecorder(
+                      initialPath: _voiceMemoPath,
+                      onMemoSaved: (path) => setState(() => _voiceMemoPath = path),
                     ),
                     const SizedBox(height: 32),
                     SizedBox(
